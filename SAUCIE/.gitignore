@@ -1,0 +1,17 @@
+*.data-*
+*.DS_STORE
+*.gz
+*.index
+*.json
+*.jpg
+*.mat
+*.meta
+*.out
+*.pyc
+*.pkl
+*.png
+*.sh
+checkpoint
+*.npz
+*.pdf
+*.xlsx
