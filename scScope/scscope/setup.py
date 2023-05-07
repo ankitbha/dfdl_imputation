@@ -6,7 +6,7 @@ install_requires = [
     'scipy',
     'scikit-learn>=0.18.0',
     'phenograph',
-    'tensorflow-gpu>=1.2.1'
+    'tensorflow'
 ]
 setup(name='scScope',
       version='0.1.5',
