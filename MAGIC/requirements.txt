@@ -1,0 +1,9 @@
+numpy>=1.14.0
+scipy>=1.1.0
+pandas>=0.25
+scprep>=1.0
+matplotlib
+scikit-learn>=0.19.1
+future
+tasklogger>=1.0.0
+graphtools>=1.4.0
