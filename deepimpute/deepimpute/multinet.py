@@ -14,7 +14,7 @@ from keras.callbacks import EarlyStopping
 import keras.losses
 
 import tensorflow as tf
-
+tf.init_scope()
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 def get_distance_matrix(raw, n_pred=None):
@@ -161,7 +161,7 @@ class MultiNet:
                 print('Unknown loss: {}. Aborting.'.format(loss))
                 exit(1)
 
-        model.compile(optimizer=keras.optimizers.Adam(lr=self.NN_parameters['learning_rate']),
+        model.compile(optimizer=keras.optimizers.legacy.Adam(lr=self.NN_parameters['learning_rate']),
                       loss=loss)
 
         return model
