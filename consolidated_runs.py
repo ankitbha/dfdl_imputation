@@ -35,7 +35,7 @@ import scScope.scscope.scscope as DeepImpute
 import deepimpute.deepimpute as deepimpute
 
 from utils import gt_benchmark, reload_modules, delete_modules 
-from utils import plot_precisions, precision_at_k, flat_precision_at_k
+from utils import plot_precisions, precision_at_k
 
 def run_sergio(input_file, reg_file, ind):
     # Run SERGIO
