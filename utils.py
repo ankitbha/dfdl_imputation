@@ -50,30 +50,6 @@ def gt_benchmark(virtual_imputation, target_file):
     return gt_temp, virtual_imputation
 
 def precision_at_k(vim, gt, k_vals, get_locs=False):
-    k_averages = []
-    i = len(vim) - 1
-    nested_precisions = []
-    avgs = []
-    for index in tqdm(vim):
-        gt_row = gt[i]
-        sorted = np.argsort(vim[i])
-        gt_sum = np.sum(gt_row)
-        precisions = [0] * len(k_vals)
-        i -= 1
-        for k in k_vals[::-1]:
-            top_k = sorted[:k]
-            top_k_gt = gt_row[top_k]
-            if k != k_vals[-1]:
-                gt_sum -= top_k_gt[-1]
-            precisions[k - 1] = gt_sum / k
-        nested_precisions.append(precisions)
-    nested_precisions = np.array(nested_precisions)
-    for i, val in enumerate(nested_precisions[0]):
-        avg = np.mean(nested_precisions[:,i])
-        avgs.append(avg)
-    return avgs
-
-def flat_precision_at_k(vim, gt, k_vals, get_locs=False):
     vim_flat = vim.flatten()
     gt_flat = gt.flatten()
     sorted = np.argsort(vim_flat)
@@ -86,22 +62,22 @@ def flat_precision_at_k(vim, gt, k_vals, get_locs=False):
         else:
             gt_sum -= gt_flat[top_k[-1]]
         precisions[k - 1] = gt_sum / k
-    avg_precisions = [0] * len(k_vals)
-    total_relevant = np.sum(gt_flat)
-    last_dot = np.dot(precisions, gt_flat)
-    i = len(k_vals) - 1
-    for index, precision in enumerate(tqdm(precisions)):
-        if index == 0:
-            pass
-        else:
-            total_relevant -= gt_flat[i]
-        last_dot -= (precisions[i] * gt_flat[i])
-        if total_relevant != 0:
-            avg_precisions[i] = (1 / total_relevant) * last_dot
-        else:
-            avg_precisions[i] = 0
-        i -= 1
-    return precisions[::gt.shape[0]], avg_precisions[::gt.shape[0]]
+    # avg_precisions = [0] * len(k_vals)
+    # total_relevant = np.sum(gt_flat)
+    # last_dot = np.dot(precisions, gt_flat)
+    # i = len(k_vals) - 1
+    # for index, precision in enumerate(tqdm(precisions)):
+    #     if index == 0:
+    #         pass
+    #     else:
+    #         total_relevant -= gt_flat[i]
+    #     last_dot -= (precisions[i] * gt_flat[i])
+    #     if total_relevant != 0:
+    #         avg_precisions[i] = (1 / total_relevant) * last_dot
+    #     else:
+    #         avg_precisions[i] = 0
+    #     i -= 1
+    return precisions#, avg_precisions
 
 def plot_precisions(precisions, flat_precisions, avg_precisions, method_name, gt=None):
     plt.figure(figsize=(15,8))

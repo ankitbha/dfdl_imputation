@@ -239,10 +239,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['Clean Precision@k'] = precision_k
-                    individual_results['Clean Flat Precision@k'] = flat_precision_k
-                    individual_results['Clean Avg Precision@k'] = avg_precision_k
 
                 # Run GENIE3 on Noisy Data
                 print(f"---> Running GENIE3 on Noisy Data for DS{i}")
@@ -255,10 +252,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['Noisy Precision@k'] = precision_k
-                    individual_results['Noisy Flat Precision@k'] = flat_precision_k
-                    individual_results['Noisy Avg Precision@k'] = avg_precision_k
 
             # Run GENIE3 on SAUCIE Data
             if saucie:
@@ -276,10 +270,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['SAUCIE Precision@k'] = precision_k
-                    individual_results['SAUCIE Flat Precision@k'] = flat_precision_k
-                    individual_results['SAUCIE Avg Precision@k'] = avg_precision_k
             
             # Run GENIE3 on scScope Data
             if scScope:
@@ -297,10 +288,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['scScope Precision@k'] = precision_k
-                    individual_results['scScope Flat Precision@k'] = flat_precision_k
-                    individual_results['scScope Avg Precision@k'] = avg_precision_k
 
             # Run GENIE3 on DeepImpute Data
             if deepImpute:
@@ -319,10 +307,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['DeepImpute Precision@k'] = precision_k
-                    individual_results['DeepImpute Flat Precision@k'] = flat_precision_k
-                    individual_results['DeepImpute Avg Precision@k'] = avg_precision_k
 
             # Run GENIE3 on MAGIC Data
             if magic:
@@ -340,10 +325,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['MAGIC t=2 Precision@k'] = precision_k
-                    individual_results['MAGIC t=2 Flat Precision@k'] = flat_precision_k
-                    individual_results['MAGIC t=2 Avg Precision@k'] = avg_precision_k
 
                 print(f"---> Running GENIE3 on MAGIC t=7 for DS{i}")
                 VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100)
@@ -355,25 +337,19 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['MAGIC t=7 Precision@k'] = precision_k
-                    individual_results['MAGIC t=7 Flat Precision@k'] = flat_precision_k
-                    individual_results['MAGIC t=7 Avg Precision@k'] = avg_precision_k
                 
                 print(f"---> Running GENIE3 on MAGIC t=default for DS{i}")
                 VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['MAGIC t=default'] = float('%.2f'%(roc_score))
+                    individual_results['MAGIC t=default ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.shape[0])
                     k_flat = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    flat_precision_k, avg_precision_k = flat_precision_at_k(gt, rescaled_vim, k_flat)
                     individual_results['MAGIC t=default Precision@k'] = precision_k
-                    individual_results['MAGIC t=default Flat Precision@k'] = flat_precision_k
-                    individual_results['MAGIC t=default Avg Precision@k'] = avg_precision_k
 
         print(individual_results)
         results[ds_str] = individual_results
