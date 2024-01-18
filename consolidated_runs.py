@@ -1,4 +1,4 @@
-from GENIE3 import *
+from GENIE3.GENIE3 import *
 import sys, os
 import numpy as np
 import pandas as pd
@@ -10,29 +10,29 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 
-sys.path.append(os.getcwd())
+#sys.path.append(os.getcwd())
 
-path_to_SERGIO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SERGIO'))
-path_to_MAGIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'MAGIC'))
-path_to_SAUCIE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SAUCIE'))
-path_to_scScope = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scScope'))
-path_to_DeepImpute = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'deepimpute'))
+# path_to_SERGIO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SERGIO'))
+# path_to_MAGIC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'MAGIC'))
+# path_to_SAUCIE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'SAUCIE'))
+# path_to_scScope = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scScope'))
+# path_to_DeepImpute = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'deepimpute'))
 
-if path_to_SERGIO not in sys.path:
-    sys.path.insert(0, path_to_SERGIO)
-from SERGIO.sergio import sergio
-if path_to_MAGIC not in sys.path:
-    sys.path.insert(0, path_to_MAGIC)
-from magic import magic
-if path_to_SAUCIE not in sys.path:
-    sys.path.insert(0, path_to_SAUCIE)
-import SAUCIE
-if path_to_scScope not in sys.path:
-    sys.path.insert(0, path_to_scScope)
-import scscope.scscope as DeepImpute
-if path_to_DeepImpute not in sys.path:
-    sys.path.insert(0, path_to_DeepImpute)
-import deepimpute
+# if path_to_SERGIO not in sys.path:
+#     sys.path.insert(0, path_to_SERGIO)
+from SERGIO.SERGIO.sergio import sergio
+# if path_to_MAGIC not in sys.path:
+#     sys.path.insert(0, path_to_MAGIC)
+import MAGIC.magic as magic
+# if path_to_SAUCIE not in sys.path:
+#     sys.path.insert(0, path_to_SAUCIE)
+import SAUCIE.SAUCIE as SAUCIE
+# if path_to_scScope not in sys.path:
+#     sys.path.insert(0, path_to_scScope)
+import scScope.scscope.scscope as DeepImpute
+# if path_to_DeepImpute not in sys.path:
+#     sys.path.insert(0, path_to_DeepImpute)
+import deepimpute.deepimpute as deepimpute
 
 from utils import gt_benchmark, reload_modules, delete_modules 
 from utils import plot_precisions, precision_at_k, flat_precision_at_k
@@ -61,7 +61,7 @@ def run_sergio(input_file, reg_file, ind):
     expr = sim.getExpressions()
     expr_clean = np.concatenate(expr, axis = 1)
     ds_str = 'DS' + str(ind)
-    save_path = '../imputations/' + ds_str
+    save_path = './imputations/' + ds_str
     
     # Save simulated data variants
     np.save(save_path + '/DS6_clean', expr_clean)
@@ -80,17 +80,22 @@ def run_sergio(input_file, reg_file, ind):
     np.save(save_path + '/DS6_45', count_matrix)
 
 def run_saucie(x_path, y_path, ind):
-    reload_modules('tensorflow.compat')
+    #reload_modules('tensorflow.compat')
     tf = importlib.import_module('tensorflow.compat.v1')
-    importlib.reload(SAUCIE)
+    #importlib.reload(SAUCIE)
     tf.disable_v2_behavior()
     ds_str = 'DS' + str(ind)
-    save_path = '../imputations/' + ds_str
+    save_path = './imputations/' + ds_str
+    print("loading data")
     y = np.transpose(np.load(y_path))
     x = np.transpose(np.load(x_path))
+    print("reset graph")
     tf.reset_default_graph()
+    print("Initialize saucie")
     saucie = SAUCIE.SAUCIE(y.shape[1])
+    print("Load saucie")
     loadtrain = SAUCIE.Loader(y, shuffle=True)
+    print("Train saucie")
     saucie.train(loadtrain, steps=1000)
 
     loadeval = SAUCIE.Loader(y, shuffle=False)
@@ -101,15 +106,16 @@ def run_saucie(x_path, y_path, ind):
     np.save(save_path + save_str, rec_y)
 
 def run_deepImpute(x_path, y_path, ind):
-    reload_modules('tensorflow.compat')
+    #reload_modules('tensorflow.compat')
     importlib.invalidate_caches()
-    multinet = importlib.import_module('deepimpute.multinet')
+    multinet = importlib.import_module('deepimpute.deepimpute.multinet')
     importlib.reload(multinet)
     tf = importlib.import_module('tensorflow.compat.v1')
+    #tf = importlib.import_module('tensorflow')
     tf.init_scope()
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     ds_str = 'DS' + str(ind)
-    save_path = '../imputations/' + ds_str
+    save_path = './imputations/' + ds_str
     y = np.transpose(np.load(y_path))
     y = pd.DataFrame(y)
     x = np.transpose(np.load(x_path))
@@ -123,7 +129,7 @@ def run_deepImpute(x_path, y_path, ind):
 
 def run_magic(x_path, y_path, ind):
     ds_str = 'DS' + str(ind)
-    save_path = '../imputations/' + ds_str
+    save_path = './imputations/' + ds_str
     print(x_path, y_path)
     y = np.transpose(np.load(y_path))
     x = np.transpose(np.load(x_path))
@@ -152,7 +158,7 @@ def run_magic(x_path, y_path, ind):
 
 def run_scScope(x_path, y_path, ind):
     ds_str = 'DS' + str(ind)
-    save_path = '../imputations/' + ds_str
+    save_path = './imputations/' + ds_str
     y = np.transpose(np.load(y_path))
     x = np.transpose(np.load(x_path))
     DI_model = DeepImpute.train(
@@ -181,16 +187,16 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
     for i in tqdm(datasets):
         individual_results = {}
         if i == 1:   
-            target_path = target_file = '../SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Interaction_cID_4.txt'
-            regs_path = '../SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Regs_cID_4.txt'
+            target_path = target_file = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Interaction_cID_4.txt'
+            regs_path = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Regs_cID_4.txt'
         elif i == 2:
-            target_path = target_file = '../SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Interaction_cID_5.txt'
-            regs_path = '../SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Regs_cID_5.txt'
+            target_path = target_file = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Interaction_cID_5.txt'
+            regs_path = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Regs_cID_5.txt'
         else:
-            target_path = target_file = '../SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Interaction_cID_6.txt'
-            regs_path = '../SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Regs_cID_6.txt'
+            target_path = target_file = './SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Interaction_cID_6.txt'
+            regs_path = './SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Regs_cID_6.txt'
         ds_str = 'DS' + str(i)
-        save_path = '../imputations/' + ds_str
+        save_path = './imputations/' + ds_str
 
         if sergio:
             print(f"---> Running SERGIO on DS{i}")
@@ -380,7 +386,7 @@ def create_correlation_plots(datasets):
     for i in tqdm(datasets):
         print(f"---> Calculating correlations for data from DS{i}")
         ds_str = 'DS' + str(i)
-        save_path = '../imputations/' + ds_str
+        save_path = './imputations/' + ds_str
 
         # Load saved data
         y = np.transpose(np.load(save_path + '/DS6_45.npy'))
