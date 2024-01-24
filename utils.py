@@ -91,3 +91,25 @@ def plot_precisions(precisions, flat_precisions, avg_precisions, method_name, gt
     plt.ylabel("Precision")
     plt.title(f"{method_name} Precision @ K Curves")
     plt.show()
+
+def create_zip():
+    import zipfile
+    import glob
+    with zipfile.ZipFile('Archive.zip', 'w') as f:
+        subfolders = ["deepimpute",
+                      "imputations", 
+                      "GENIE3", 
+                      "MAGIC", 
+                      "SAUCIE",
+                      "SERGIO",
+                      "scScope",
+                      "arboreto"]
+        for subfolder in subfolders:
+            for file in glob.glob(f"{subfolder}/**/*", recursive=True):
+                f.write(file)
+        top_level_files = ["utils.py",
+                           "consolidated_runs.py",
+                           ".gitignore"]
+        for file in top_level_files:
+            f.write(file)
+    # package all subfolders except venv, imputations, and previous_imputations into zip
