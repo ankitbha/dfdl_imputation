@@ -102,6 +102,10 @@ def run_script_with_subprocess(method, script, args):
         script = './BEELINE/' + script
         print("Running BEELINE " + script)
         subprocess.run(['python3', script] + args)
+    else:
+        script = './GENECI/components/infer_network/' + method + '/' + script
+        print(f"Running {method} " + script)
+        subprocess.run(['python3', script] + args)
 
 def create_zip():
     import zipfile
