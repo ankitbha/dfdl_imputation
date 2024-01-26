@@ -287,30 +287,29 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 individual_results.update(arboreto_results)
         
         if genie:
-            if sergio:
             # Run GENIE3 on Clean Data
-                print(f"---> Running GENIE3 on Clean Data for DS{i}")
-                VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100)        
-                gt, rescaled_vim = gt_benchmark(VIM_CLEAN, target_file)
-                if roc:
-                    roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 Clean ROC_AUC'] = float('%.2f'%(roc_score))
-                if precision_recall_k:
-                    k = range(1, gt.size)
-                    precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 Clean Precision@k'] = precision_k
+            print(f"---> Running GENIE3 on Clean Data for DS{i}")
+            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100)        
+            gt, rescaled_vim = gt_benchmark(VIM_CLEAN, target_file)
+            if roc:
+                roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
+                individual_results['GENIE3 Clean ROC_AUC'] = float('%.2f'%(roc_score))
+            if precision_recall_k:
+                k = range(1, gt.size)
+                precision_k = precision_at_k(gt, rescaled_vim, k)
+                individual_results['GENIE3 Clean Precision@k'] = precision_k
 
-                # Run GENIE3 on Noisy Data
-                print(f"---> Running GENIE3 on Noisy Data for DS{i}")
-                VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100)        
-                gt, rescaled_vim = gt_benchmark(VIM_NOISY, target_file)
-                if roc:
-                    roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 Noisy ROC_AUC'] = float('%.2f'%(roc_score))
-                if precision_recall_k:
-                    k = range(1, gt.size)
-                    precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 Noisy Precision@k'] = precision_k
+            # Run GENIE3 on Noisy Data
+            print(f"---> Running GENIE3 on Noisy Data for DS{i}")
+            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100)        
+            gt, rescaled_vim = gt_benchmark(VIM_NOISY, target_file)
+            if roc:
+                roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
+                individual_results['GENIE3 Noisy ROC_AUC'] = float('%.2f'%(roc_score))
+            if precision_recall_k:
+                k = range(1, gt.size)
+                precision_k = precision_at_k(gt, rescaled_vim, k)
+                individual_results['GENIE3 Noisy Precision@k'] = precision_k
 
             # Run GENIE3 on SAUCIE Data
             if saucie:

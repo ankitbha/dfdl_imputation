@@ -4,6 +4,7 @@ import sys
 from IPython import get_ipython
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import subprocess
 
 def delete_modules(modname):
     from sys import modules
@@ -91,6 +92,16 @@ def plot_precisions(precisions, flat_precisions, avg_precisions, method_name, gt
     plt.ylabel("Precision")
     plt.title(f"{method_name} Precision @ K Curves")
     plt.show()
+
+def run_script_with_subprocess(method, script, args):
+    if method == 'DeepDRIM':
+        script = './DeepDRIM/' + script
+        print("Running DeepDRIM " + script)
+        subprocess.run(['python3', script] + args)
+    elif method == "BEELINE":
+        script = './BEELINE/' + script
+        print("Running BEELINE " + script)
+        subprocess.run(['python3', script] + args)
 
 def create_zip():
     import zipfile
