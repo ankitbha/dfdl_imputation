@@ -112,15 +112,15 @@ class direct_model1_squarematrix:
                 zzdata.append(zdata[k])
             count_setx = count_setx + len(ydata)
             count_set.append(count_setx)
-            print (i,len(ydata))
+            #print (i,len(ydata))
         yydata_array = np.array(yydata)
         yydata_x = yydata_array.astype('int')
-        print(np.array(xxdata_list).shape)
+        #print(np.array(xxdata_list).shape)
         return((np.array(xxdata_list),yydata_x,count_set,np.array(zzdata)))
 
 
     def update_test_train_data(self, test_indel,epochs,num_of_pair_ratio=1):
-        print("len test_indel",test_indel)
+        #print("len test_indel",test_indel)
         if type(test_indel)!=list:
             test_TF = [test_indel]  #
         else:
@@ -146,7 +146,7 @@ class direct_model1_squarematrix:
 
     def get_single_image_model(self, x_train):
         ############
-        print("x_train.shape in single image",x_train.shape)
+        #print("x_train.shape in single image",x_train.shape)
             # model.add(Conv2D(32, (3, 3)))
         # model.add(keras.layers.Dense(32, input_dim=32))
         # model.add(Conv2D(32, (3, 3), padding='same', input_shape=x_train.shape[1:]))

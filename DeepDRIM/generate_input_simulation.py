@@ -206,11 +206,11 @@ class ExprCollection:
             random_A = np.random.randint(len(A[0]), size=(1, len(A[0])))
             geneA_list = A[0][random_A][0]
             geneB_list = A[1][random_A][0]
-            print("geneA_list", geneA_list)
+            #print("geneA_list", geneA_list)
             for i in select_pair:
                 geneE_list.append(geneA_list[i])
                 geneF_list.append(geneB_list[i])
-            print("geneE_list",geneE_list)
+            #print("geneE_list",geneE_list)
 
         B = np.where(theta == 0)
         if len(B[0])>0:
@@ -327,7 +327,7 @@ class ExprCollection:
 
         if shape(one_row)[0] > 0:
             if shape(one_row)[1] < (self.max_col * 32):
-                print("rest dimension", ((self.max_col * 32)-shape(one_row)[1]))
+                #print("rest dimension", ((self.max_col * 32)-shape(one_row)[1]))
                 rest_image=np.zeros((32,((self.max_col * 32)-shape(one_row)[1])))
                 one_row = np.concatenate((one_row,rest_image), axis=1)
                 rows = np.concatenate((rows,one_row),axis=0)
@@ -373,7 +373,7 @@ class ExprCollection:
             ydata.append(y)
             zdata.append(z)
 
-        print("xdata",shape(xdata))
+        #print("xdata",shape(xdata))
 
         xx=xdata
         if (len(xdata) > 0):
@@ -382,7 +382,7 @@ class ExprCollection:
                 xx = xdata
             if len(shape(xdata))==3:
                 xx = np.array(xdata)[:, :, :, np.newaxis]
-        print("xx",shape(xx))
+        #print("xx",shape(xx))
 
         np.save(save_header+'_xdata.npy',xx)
         np.save(save_header + '_ydata.npy', np.array(ydata))
@@ -398,7 +398,7 @@ class ExprCollection:
         #print(key_list)
         shuffle(key_list)
         shuffle(key_list)
-        print("len key list",len(key_list))
+        #print("len key list",len(key_list))
         #print(key_list)
         index_start = 0
 
@@ -406,13 +406,13 @@ class ExprCollection:
             self.pair_in_batch_num = math.floor(len(key_list)/self.divide_part)
         batches = int(round(len(key_list)/self.pair_in_batch_num))
 
-        print(batches)
+        #print(batches)
         tmp = self.start_batch_num
         for i in range(self.start_batch_num,(tmp+batches)):
             print("index_start", index_start)
 
             index_end = index_start + self.pair_in_batch_num
-            print("index_end", index_end)
+            #print("index_end", index_end)
             if index_end <= len(key_list):
                 select_list = list(key_list[j] for j in range(index_start,index_end))
 
@@ -531,7 +531,7 @@ class ExprCollection:
         from random import shuffle
         shuffle(pair_list)
         selected = pair_list[1:self.top_num]
-        print(selected)
+        #print(selected)
         for i in range(0, len(selected)):
             tmp = selected[i].split(',')
             x = self.get_histogram_bins(tmp[0], tmp[1])

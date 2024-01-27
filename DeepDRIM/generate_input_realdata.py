@@ -8,7 +8,7 @@ import numpy as np
 import json, re,os, sys
 #from GENIE3 import *
 import argparse
-
+from tqdm import tqdm
 
 
 
@@ -161,7 +161,7 @@ class RepresentationTest2:
     def load_real_data(self, filename):
         # '/home/yey3/sc_process_1/rank_total_gene_rpkm.h5')    # scRNA-seq expression data )#
         store = pd.HDFStore(filename)
-        print(store.keys())
+        #print(store.keys())
         rpkm = store['/RPKMs']
 
         if self.cellNum is None:
@@ -175,12 +175,12 @@ class RepresentationTest2:
         store.close()
         self.geneIDs=rpkm.columns
         self.geneIDs=np.asarray(self.geneIDs,dtype=str)
-        print("self.geneIDs",self.geneIDs)
+        #print("self.geneIDs",self.geneIDs)
         #for i in range(0, len(self.geneIDs)):
         #    self.geneIDs[i]=str(self.geneIDs[i])
         #    self.geneIDs[i] = self.geneIDs[i].lower()
-        print("gene nums",len(rpkm.columns))
-        print("cell nums", len(rpkm.index))
+        #print("gene nums",len(rpkm.columns))
+        #print("cell nums", len(rpkm.index))
         #out_table_df = rpkm.T
         #out_table_df.to_csv(self.output_dir+"bone_marrow_rpkm.csv",sep=",")
         #print(rpkm.index)
@@ -198,40 +198,40 @@ class RepresentationTest2:
         #self.rpkm = pd.SparseDataFrame(selected_cells_sparse_matrix) #for pandas v0.24
 
         self.rpkm = self.rpkm.T
-        print("rpkm[0,]",self.rpkm.iloc[0,:])
-        print("rpkm[,0]",self.rpkm.iloc[:,0])
-        print("shape self.rpkm",self.rpkm.shape)
+        # print("rpkm[0,]",self.rpkm.iloc[0,:])
+        # print("rpkm[,0]",self.rpkm.iloc[:,0])
+        # print("shape self.rpkm",self.rpkm.shape)
         df=pd.read_table(geneNameFile,header=None)
         self.geneIDs=df.iloc[:,0]
         self.geneIDs = np.asarray(self.geneIDs, dtype=str)
-        print("len geneIDs", len(self.geneIDs))
+        #print("len geneIDs", len(self.geneIDs))
         for i in range(0,len(self.geneIDs)):
             self.geneIDs[i]=self.geneIDs[i].lower()
-        print("geneIDs",self.geneIDs)
+        #print("geneIDs",self.geneIDs)
 
 
     def load_real_data_from_csv(self,filename):
         df = pd.read_csv(filename)
-        print("load data shape",df.shape)
-        print("df columns:",df.columns)
-        print("df index", df.index)
+        # print("load data shape",df.shape)
+        # print("df columns:",df.columns)
+        # print("df index", df.index)
         self.rpkm=df
         self.geneIDs=df.columns
         self.geneIDs = np.asarray(self.geneIDs, dtype=str)
-        print("len geneIDs", len(self.geneIDs))
+        #print("len geneIDs", len(self.geneIDs))
         for i in range(0, len(self.geneIDs)):
             self.geneIDs[i] = self.geneIDs[i].lower()
-        print("geneIDs", self.geneIDs)
+        #print("geneIDs", self.geneIDs)
 
     def load_real_data_singlecelltype(self, expr_file):
         df = pd.read_csv(expr_file,header='infer',index_col=0)
-        print("load data shape", df.shape)
-        print("df columns:", df.columns)
-        print("df index", df.index)
+        # print("load data shape", df.shape)
+        # print("df columns:", df.columns)
+        # print("df index", df.index)
         self.rpkm = df.T
         self.geneIDs = df.index
         self.geneIDs = np.asarray(self.geneIDs, dtype=str)
-        print("len geneIDs", len(self.geneIDs))
+        #print("len geneIDs", len(self.geneIDs))
         for i in range(0, len(self.geneIDs)):
             self.geneIDs[i] = self.geneIDs[i].lower()
         print("geneIDs", self.geneIDs)
@@ -265,10 +265,10 @@ class RepresentationTest2:
 
                     if geneA_name in unique_keys:
                         if geneB_name in unique_keys:
-                            print(key,label,int(label))
+                            #print(key,label,int(label))
                             self.gold_standard[key] = int(label)
         s.close()
-        print("gold standard length",len(self.gold_standard.keys()))
+        #print("gold standard length",len(self.gold_standard.keys()))
 
     def load_split_batch_pos(self,filename):
         self.split_batch_pos = []
@@ -367,16 +367,16 @@ class RepresentationTest2:
         zdata = []  # record corresponding pairs
         # for each term in list, split it into two
         # call get_gene_pair_data and append together
-        print("x_method_version",x_method_version)
-        print("gene_list",gene_list)
+        # print("x_method_version",x_method_version)
+        # print("gene_list",gene_list)
         if len(gene_list)>0:
             for i in range(0,len(gene_list)):
                 geneA=gene_list[i].split(',')[0]
                 geneB=gene_list[i].split(',')[1]
                 key = str(geneA) + ',' + str(geneB)
                 gold_y = self.gold_standard.get(key)
-                print("gene_list[i]", gene_list[i])
-                print("gold_y", gold_y)
+                # print("gene_list[i]", gene_list[i])
+                # print("gold_y", gold_y)
                 if int(gold_y) != 2:
                     [x,y,z] = self.get_gene_pair_data(geneA,geneB,x_method_version)
                     if x is not None:
@@ -385,7 +385,7 @@ class RepresentationTest2:
                         zdata.append(z)
 
             if self.print_xdata:
-                print("xdata",shape(xdata))
+                #print("xdata",shape(xdata))
 
                 if (len(xdata) > 0):
                     if len(shape(xdata)) == 4:
@@ -396,9 +396,9 @@ class RepresentationTest2:
                     else:
                         xx = np.array(xdata)[:, :, :, np.newaxis]
 
-                print("xx",shape(xx))
+                #print("xx",shape(xx))
 
-                print("save",save_header)
+                #print("save",save_header)
                 np.save(save_header+'_xdata.npy',xx)
                 np.save(save_header + '_ydata.npy', np.array(ydata))
                 np.save(save_header + '_zdata.npy', np.array(zdata))
@@ -417,10 +417,10 @@ class RepresentationTest2:
             key_list = list(self.gold_standard.keys())
             #key_list = list(sorted(self.gold_standard.keys()))
 
-        print("gold standard len:",len(key_list))
+        #print("gold standard len:",len(key_list))
         if self.split_batch_pos is not None:
-            print(len(self.split_batch_pos))
-            print("self.split_batch_pos",self.split_batch_pos)
+            # print(len(self.split_batch_pos))
+            # print("self.split_batch_pos",self.split_batch_pos)
             index_start_list=[]
             index_end_list=[]
 
@@ -439,11 +439,11 @@ class RepresentationTest2:
             if TF_order_random:
                 from random import shuffle
                 TF_order=list(range(0,len(index_start_list)))
-                print("TF_order",TF_order)
+                #print("TF_order",TF_order)
                 shuffle(TF_order)
-                print("TF_order", TF_order)
+                #print("TF_order", TF_order)
                 TF_order=list(TF_order)
-                print("TF_order",TF_order)
+                #print("TF_order",TF_order)
                 index_start_list=np.asarray(index_start_list)
                 index_end_list=np.asarray(index_end_list)
                 index_start_list=index_start_list[TF_order]
@@ -455,24 +455,24 @@ class RepresentationTest2:
                 if self.end_batch_num > len(index_start_list):
                     self.end_batch_num = len(index_start_list) ####?????!!!!!
 
-            print("(len(self.split_batch_pos)-1):",(len(self.split_batch_pos)-1))
-            print("len(index_start_list):", len(index_start_list))
-            print("self.start_batch_num:", self.start_batch_num)
-            print("self.end_batch_num:", self.end_batch_num)
+            # print("(len(self.split_batch_pos)-1):",(len(self.split_batch_pos)-1))
+            # print("len(index_start_list):", len(index_start_list))
+            # print("self.start_batch_num:", self.start_batch_num)
+            # print("self.end_batch_num:", self.end_batch_num)
 
-            for i in range(self.start_batch_num, self.end_batch_num):
-                print(i)
+            for i in tqdm(range(self.start_batch_num, self.end_batch_num)):
+                #print(i)
                 index_start = int(index_start_list[i])
                 index_end = int(index_end_list[i])
-                print("index_start",index_start)
-                print("index_end", index_end)
+                #print("index_start",index_start)
+                #print("index_end", index_end)
                 if index_end <= len(key_list):
                     select_list = list(key_list[j] for j in range(index_start, index_end))
 
                     for j in range(index_start,index_end):
                         self.generate_key_list.append(key_list[j]+','+str(self.gold_standard.get(key_list[j])))
 
-                    print("select_list",select_list)
+                    #print("select_list",select_list)
                     if generate_multi:
                         self.get_batch(select_list, self.output_dir+"version11/" + str(i),11)
                         self.get_batch(select_list, self.output_dir + "version0/" + str(i), 0)
@@ -485,15 +485,15 @@ class RepresentationTest2:
         else:
             if self.shulffle_key:
                 from random import shuffle
-                print(key_list)
+                #print(key_list)
                 shuffle(key_list)
                 shuffle(key_list)
-            print(len(key_list))
+            #print(len(key_list))
             #print(key_list)
 
             batches = int(round(len(key_list)/self.pair_in_batch_num))
 
-            print(batches)
+            #print(batches)
             tmp = self.start_batch_num
             if self.end_batch_num is None:
                 self.end_batch_num=(tmp+batches)+1
@@ -503,14 +503,14 @@ class RepresentationTest2:
             else:
                 index_start=self.pair_in_batch_num*self.start_batch_num
 
-            for i in range(self.start_batch_num,self.end_batch_num):
+            for i in tqdm(range(self.start_batch_num,self.end_batch_num)):
                 index_end = index_start + self.pair_in_batch_num
 
                 if index_end > len(key_list):
                     index_end = len(key_list)
 
                 select_list = list(key_list[j] for j in range(index_start,index_end))
-                print(select_list)
+                #print(select_list)
                 if generate_multi:
                     self.get_batch(select_list, self.output_dir+"version11/" + str(i),11)
                     self.get_batch(select_list, self.output_dir+"version0/" + str(i), 0)
@@ -608,7 +608,7 @@ class RepresentationTest2:
         from random import shuffle
         shuffle(pair_list)
         selected = pair_list[1:self.top_num]
-        print(selected)
+        #print(selected)
         for i in range(0, len(selected)):
             tmp = selected[i].split(',')
             x = self.get_histogram_bins(tmp[0], tmp[1])
@@ -647,8 +647,8 @@ class RepresentationTest2:
                 index = 0
                 unique_keys = {}
 
-        print("len(geneIDs_TF)",len(self.geneIDs_TF))
-        print("geneIDs_TF",self.geneIDs_TF)
+        # print("len(geneIDs_TF)",len(self.geneIDs_TF))
+        # print("geneIDs_TF",self.geneIDs_TF)
 
         df = pd.DataFrame(self.geneIDs_TF)
         df.to_csv("TF_list.csv")
@@ -656,15 +656,15 @@ class RepresentationTest2:
 
     def calculate_cov(self):
         expr = self.rpkm.iloc[:][:]
-        print("expr shape", shape(expr))
+        # print("expr shape", shape(expr))
         expr=np.asarray(expr)
         #expr=expr[0:43261,0:2000] ###need remove
-        print("expr shape", shape(expr))
+        # print("expr shape", shape(expr))
         expr = expr.transpose()
-        print("expr shape",shape(expr))
+        # print("expr shape",shape(expr))
         self.cov_matrix = np.cov(expr)
         self.corr_matrix = np.corrcoef(expr)
-        print("cov matrix dim", shape(self.cov_matrix))
+        # print("cov matrix dim", shape(self.cov_matrix))
 
     def get_hub_TF(self):
         if self.cov_matrix is None:
@@ -709,7 +709,7 @@ class RepresentationTest2:
         #or replace geneIDs_TF to self.geneIDs
 
         top_TF = [self.geneIDs_TF[j] for j in select_index]
-        print("top TF", top_TF)
+        # print("top TF", top_TF)
         return top_TF
 
     def get_top_corr_TF(self, geneA):
@@ -732,7 +732,7 @@ class RepresentationTest2:
         #or replace geneIDs_TF to self.geneIDs
 
         top_TF = [self.geneIDs_TF[j] for j in select_index]
-        print("top TF", top_TF)
+        # print("top TF", top_TF)
         return top_TF
 
 
@@ -881,7 +881,7 @@ class RepresentationTest2:
 
 
         if len(histogram_list)>0:
-            print("len histogram", len(histogram_list))
+            # print("len histogram", len(histogram_list))
             # concantate together, if ij not compress, consider the way put together. or consider multiple channel
             if self.cat_option == "flat":
                 if self.flag_ij_compress:
@@ -941,12 +941,12 @@ class RepresentationTest2:
                 one_row = np.concatenate((one_row, one_image), axis=1)
                 index = index + 1
 
-            print(shape(one_row))
+            # print(shape(one_row))
         if shape(one_row)[0] > 0:
             if shape(one_row)[0] > 0:
                 dim2 = 32
                 if shape(one_row)[1] < (self.max_col * dim2):
-                    print("rest dimension", ((self.max_col * dim2) - shape(one_row)[1]))
+                    # print("rest dimension", ((self.max_col * dim2) - shape(one_row)[1]))
                     rest_image = np.zeros((dim2, ((self.max_col * dim2) - shape(one_row)[1])))
                     one_row = np.concatenate((one_row, rest_image), axis=1)
                     rows = np.concatenate((rows, one_row), axis=0)
@@ -956,19 +956,19 @@ class RepresentationTest2:
             x = one_row
         else:
             x = rows
-        print("x", shape(x))
+        # print("x", shape(x))
         return x
 
     def normal_cat(self, x_ij, histogram_list):
         index = 0
-        print(shape(x_ij))
+        # print(shape(x_ij))
         one_row = x_ij
         rows = None
         if len(histogram_list)>0:
             index = index + 1
             for i in range(0,len(histogram_list)):
                 one_image=histogram_list[i]
-                print(shape(one_image))
+                # print(shape(one_image))
                 if index >= self.max_col:
                     if rows is None:
                         rows = one_row
@@ -980,13 +980,13 @@ class RepresentationTest2:
                     one_row = np.concatenate((one_row, one_image), axis=1)
                     index = index + 1
 
-            print(shape(rows))
+            # print(shape(rows))
             if shape(one_row)[0] > 0:
                 if shape(one_row)[0] > 0:
                     dim2=32
                     
                     if shape(one_row)[1] < (self.max_col * dim2):
-                        print("rest dimension", ((self.max_col * dim2) - shape(one_row)[1]))
+                        # print("rest dimension", ((self.max_col * dim2) - shape(one_row)[1]))
                         rest_image = np.zeros((dim2, ((self.max_col * dim2) - shape(one_row)[1])))
                         one_row = np.concatenate((one_row, rest_image), axis=1)
                         rows = np.concatenate((rows, one_row), axis=0)
@@ -997,7 +997,7 @@ class RepresentationTest2:
             x = one_row
         else:
             x = rows
-        print("x", shape(x))
+        # print("x", shape(x))
         return x
 
 
@@ -1023,7 +1023,7 @@ class RepresentationTest2:
         for i in range(0, len(histogram_list)):
             one_image = histogram_list[i]
             one_image = one_image.reshape(1, 1, reshape_size)
-            print("shape one image", shape(one_image))
+            # print("shape one image", shape(one_image))
             if index >= self.max_col:
                 if rows is None:
                     rows = one_row
@@ -1035,11 +1035,11 @@ class RepresentationTest2:
                 one_row = np.concatenate((one_row, one_image), axis=1)
                 index = index + 1
 
-        print("shape rows", shape(rows))
+        # print("shape rows", shape(rows))
         if shape(one_row)[0] > 0:
             if shape(one_row)[0] > 0:
                 if shape(one_row)[1] < self.max_col:
-                    print("rest dimension", ((self.max_col) - shape(one_row)[1]))
+                    # print("rest dimension", ((self.max_col) - shape(one_row)[1]))
                     rest_image = np.zeros((1, ((self.max_col) - shape(one_row)[1]), reshape_size))
                     one_row = np.concatenate((one_row, rest_image), axis=1)
                     rows = np.concatenate((rows, one_row), axis=0)
@@ -1049,7 +1049,7 @@ class RepresentationTest2:
             x = one_row
         else:
             x = rows
-        print("x", shape(x))
+        # print("x", shape(x))
         return x
 
     def cat_multiple_channel_zhang(self, x_ij, histogram_list):
@@ -1058,7 +1058,7 @@ class RepresentationTest2:
         for i in range(0, len(histogram_list)):
             if histogram_list[i] is not None:
                 x.append(histogram_list[i])
-        print("x shape",shape(x))
+        # print("x shape",shape(x))
         return x
 
 
@@ -1066,12 +1066,12 @@ class RepresentationTest2:
 
     def quantileNormalize(self, df_input):
         df = df_input.copy()
-        print("shape df", shape(df))
+        # print("shape df", shape(df))
         # compute rank
         dic = {}
         for col in df:
 
-            print(col)
+            # print(col)
             dic.update({col: sorted(df[col])})
         sorted_df = pd.DataFrame(dic)
         rank = sorted_df.mean(axis=1).tolist()
@@ -1124,7 +1124,7 @@ class RepresentationTest2:
                 #outF.write(keyi + "," + str(self.gold_standard.get(keyi)) + "," + str(corri) + '\n')
             #outF.close()
             output_table=np.asarray(output_table)
-            print("shape output_table", shape(output_table))
+            # print("shape output_table", shape(output_table))
             np.savetxt(self.output_dir+outfile,output_table,delimiter="\t",fmt="%s")
 
 
