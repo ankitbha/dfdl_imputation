@@ -181,13 +181,16 @@ def run_scScope(x_path, y_path, ind):
     save_str = '/yhat_scScope'
     np.save(save_path + save_str, rec_y)
 
-def run_arboreto(path, roc, precision_recall_k, method_name, target, ind):
+def run_arboreto(path, roc, precision_recall_k, method_name, target, ind, regs=None):
+    if regs is None:
+        regs = 'all'
     dataset = np.transpose(np.load(path))
     df = pd.DataFrame(dataset)
     c_names = [str(c) for c in df.columns]
     df.columns = c_names
     from arboreto import algo
-    network = algo.grnboost2(expression_data=df, tf_names='all', verbose=True)
+    #network = algo.grnboost2(expression_data=df, tf_names=regs, verbose=True)
+    network = algo.genie3(expression_data=df, tf_names=regs, verbose=True)
     network['TF'] = network['TF'].astype(int)
     network['target'] = network['target'].astype(int)
     num_rows = network['target'].max() + 1
@@ -209,27 +212,27 @@ def run_arboreto(path, roc, precision_recall_k, method_name, target, ind):
     return ret_dict
 
 def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute=True, magic=True, genie=True, arboreto=True, roc=True, precision_recall_k=True):
-    target_path = ''
+    target_file = ''
     regs_path = ''
     results = {}
     count_methods = 2
     for i in tqdm(datasets):
         individual_results = {}
         if i == 1:   
-            target_path = target_file = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Interaction_cID_4.txt'
+            target_file = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Interaction_cID_4.txt'
             regs_path = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Regs_cID_4.txt'
         elif i == 2:
-            target_path = target_file = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Interaction_cID_5.txt'
+            target_file = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Interaction_cID_5.txt'
             regs_path = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Regs_cID_5.txt'
         else:
-            target_path = target_file = './SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Interaction_cID_6.txt'
+            target_file = './SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Interaction_cID_6.txt'
             regs_path = './SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Regs_cID_6.txt'
         ds_str = 'DS' + str(i)
         save_path = './imputations/' + ds_str
 
         if sergio:
             print(f"---> Running SERGIO on DS{i}")
-            run_sergio(target_path, regs_path, i)
+            run_sergio(target_file, regs_path, i)
             count_methods += 1
         
         if saucie:
@@ -256,40 +259,86 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
         x = np.transpose(np.load(save_path + '/DS6_clean.npy'))
 
         if arboreto:
+            reg_file = None
+            if i == 1:
+                reg_file = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Regs_cID_4.txt'
+            elif i == 2:
+                reg_file = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Regs_cID_5.txt'
+            else:
+                reg_file = 'SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Regs_cID_6.txt'
+            master_regs = pd.read_table(reg_file, header=None, sep=',')
+            master_regs = master_regs[0].values.astype(int).astype(str).tolist()
+
+            regulators = []
+            regulator_file = open(target_file, 'r')
+            lines = regulator_file.readlines()
+            for line in lines:
+                row = line.split(',')
+                num_regs_row = int(float(row[1]))
+                if num_regs_row != 0:
+                    for i in range(2, num_regs_row + 2):
+                        regulators.append(str(int(float(row[i]))))
+            regs = list(set(regulators))
+            regs = [i for i in regs if i not in master_regs]
+
             # if sergio:
             print(f"---> Running arboreto on Clean Data for DS{i}")
-            arboreto_results = run_arboreto(save_path + '/DS6_clean.npy', roc, precision_recall_k, 'Clean', target_file, i)
+            arboreto_results = run_arboreto(save_path + '/DS6_clean.npy', roc, precision_recall_k, 'Clean', target_file, i, regs)
             individual_results.update(arboreto_results)
             print(f"---> Running arboreto on Noisy Data for DS{i}")
-            arboreto_results = run_arboreto(save_path + '/DS6_45.npy', roc, precision_recall_k, 'Noisy', target_file, i)
+            arboreto_results = run_arboreto(save_path + '/DS6_45.npy', roc, precision_recall_k, 'Noisy', target_file, i, regs)
             individual_results.update(arboreto_results)
             if saucie:
                 print(f"---> Running arboreto on SAUCIE Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_SAUCIE.npy', roc, precision_recall_k, 'SAUCIE', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_SAUCIE.npy', roc, precision_recall_k, 'SAUCIE', target_file, i, regs)
                 individual_results.update(arboreto_results)
             if scScope:
                 print(f"---> Running arboreto on scScope Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_scScope.npy', roc, precision_recall_k, 'scScope', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_scScope.npy', roc, precision_recall_k, 'scScope', target_file, i, regs)
                 individual_results.update(arboreto_results)
             if deepImpute:
                 print(f"---> Running arboreto on DeepImpute Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_deepImpute.npy', roc, precision_recall_k, 'DeepImpute', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_deepImpute.npy', roc, precision_recall_k, 'DeepImpute', target_file, i, regs)
                 individual_results.update(arboreto_results)
             if magic:
                 print(f"---> Running arboreto on MAGIC t=2 Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_2.npy', roc, precision_recall_k, 'MAGIC t=2', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_2.npy', roc, precision_recall_k, 'MAGIC t=2', target_file, i, regs)
                 individual_results.update(arboreto_results)
                 print(f"---> Running arboreto on MAGIC t=7 Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_7.npy', roc, precision_recall_k, 'MAGIC t=7', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_7.npy', roc, precision_recall_k, 'MAGIC t=7', target_file, i, regs)
                 individual_results.update(arboreto_results)
                 print(f"---> Running arboreto on MAGIC t=default Data for DS{i}")
-                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_auto.npy', roc, precision_recall_k, 'MAGIC t=default', target_file, i)
+                arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_auto.npy', roc, precision_recall_k, 'MAGIC t=default', target_file, i, regs)
                 individual_results.update(arboreto_results)
         
         if genie:
+            # get true regulator genes from SERGIO data
+            reg_file = None
+            if i == 1:
+                reg_file = './SERGIO/data_sets/De-noised_100G_9T_300cPerT_4_DS1/Regs_cID_4.txt'
+            elif i == 2:
+                reg_file = './SERGIO/data_sets/De-noised_400G_9T_300cPerT_5_DS2/Regs_cID_5.txt'
+            else:
+                reg_file = 'SERGIO/data_sets/De-noised_1200G_9T_300cPerT_6_DS3/Regs_cID_6.txt'
+            master_regs = pd.read_table(reg_file, header=None, sep=',')
+            master_regs = master_regs[0].values.astype(int).astype(str).tolist()
+
+            regulators = []
+            regulator_file = open(target_file, 'r')
+            lines = regulator_file.readlines()
+            for line in lines:
+                row = line.split(',')
+                num_regs_row = int(float(row[1]))
+                if num_regs_row != 0:
+                    for i in range(2, num_regs_row + 2):
+                        regulators.append(str(int(float(row[i]))))
+            regs = list(set(regulators))
+            regs = [i for i in regs if i not in master_regs]
+
             # Run GENIE3 on Clean Data
             print(f"---> Running GENIE3 on Clean Data for DS{i}")
-            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100)        
+            gene_names = [str(i) for i in range(x.shape[1])]
+            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)        
             gt, rescaled_vim = gt_benchmark(VIM_CLEAN, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -301,7 +350,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
             # Run GENIE3 on Noisy Data
             print(f"---> Running GENIE3 on Noisy Data for DS{i}")
-            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100)        
+            gene_names = [str(i) for i in range(y.shape[1])]
+            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)       
             gt, rescaled_vim = gt_benchmark(VIM_NOISY, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -316,7 +366,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 y_hat_saucie = np.load(save_path + '/yhat_SAUCIE.npy')
 
                 print(f"---> Running GENIE3 on SAUCIE Data for DS{i}")
-                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_saucie.shape[1])]
+                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_SAUCIE, target_file)
                 # np.save(save_path + '/VIM_SAUCIE.npy', rescaled_vim)
                 # np.save(save_path + '/gt_SAUCIE.npy', gt)
@@ -335,7 +386,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 y_hat_scScope[y_hat_scScope == 0] = 1e-5
 
                 print(f"---> Running GENIE3 on scScope Data for DS{i}")
-                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_scscope.shape[1])]
+                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_scScope, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -350,7 +402,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 y_hat_deepImpute = np.load(save_path + '/yhat_deepImpute.npy')
 
                 print(f"---> Running GENIE3 on DeepImpute Data for DS{i}")
-                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_deepImpute.shape[1])]
+                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_deepImpute, target_file)
                 np.save(save_path + '/VIM_deepImpute.npy', rescaled_vim)
                 np.save(save_path + '/gt_deepImpute.npy', gt)
@@ -370,7 +423,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 y_hat_magic_t_auto = np.load(save_path + '/yhat_MAGIC_t_auto.npy')
 
                 print(f"---> Running GENIE3 on MAGIC t=2 for DS{i}")
-                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_magic_t2.shape[1])]
+                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -381,7 +435,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     individual_results['GENIE3 MAGIC t=2 Precision@k'] = precision_k
 
                 print(f"---> Running GENIE3 on MAGIC t=7 for DS{i}")
-                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_magic_t7.shape[1])]
+                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -392,7 +447,8 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                     individual_results['GENIE3 MAGIC t=7 Precision@k'] = precision_k
                 
                 print(f"---> Running GENIE3 on MAGIC t=default for DS{i}")
-                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100)
+                gene_names = [str(i) for i in range(y_hat_magic_t_auto.shape[1])]
+                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
