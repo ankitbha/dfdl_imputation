@@ -34,6 +34,8 @@ import scScope.scscope.scscope as DeepImpute
 #     sys.path.insert(0, path_to_DeepImpute)
 import deepimpute.deepimpute as deepimpute
 
+from Pearson.pearson import Pearson
+
 import arboreto as arboreto
 
 from utils import gt_benchmark, reload_modules, delete_modules 
@@ -203,15 +205,30 @@ def run_arboreto(path, roc, precision_recall_k, method_name, target, ind, regs=N
     gt, rescaled_vim = gt_benchmark(matrix, target)
     if roc:
         roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-        ret_dict['arboreto ' + method_name + ' ROC_AUC'] = float('%.2f'%(roc_score))
+        ret_dict['DS' + str(ind) + ' arboreto ' + method_name + ' ROC_AUC'] = float('%.2f'%(roc_score))
     if precision_recall_k:
         k = range(1, gt.size)
         precision_k = precision_at_k(gt, rescaled_vim, k)
-        ret_dict['arboreto ' + method_name + ' Precision@k'] = precision_k
+        ret_dict['DS' + str(ind) + ' arboreto ' + method_name + ' Precision@k'] = precision_k
     
     return ret_dict
 
-def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute=True, magic=True, genie=True, arboreto=True, roc=True, precision_recall_k=True):
+def run_pearson(path, target, roc, precision_recall_k, method_name, ind):
+    dataset = np.transpose(np.load(path))
+    pearson = Pearson(dataset, '').values
+    gt, rescaled_vim = gt_benchmark(pearson, target)
+    ret_dict = {}
+    if roc:
+        roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
+        ret_dict['DS' + str(ind) + ' Pearson ' + method_name + ' ROC_AUC'] = float('%.2f'%(roc_score))
+    if precision_recall_k:
+        k = range(1, gt.size)
+        precision_k = precision_at_k(gt, rescaled_vim, k)
+        ret_dict['DS' + str(ind) + ' Pearson ' + method_name + ' Precision@K'] = precision_k
+    print(ret_dict)
+    return ret_dict
+
+def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute=True, magic=True, genie=True, pearson=False, arboreto=True, roc=True, precision_recall_k=True):
     target_file = ''
     regs_path = ''
     results = {}
@@ -311,6 +328,36 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 arboreto_results = run_arboreto(save_path + '/yhat_MAGIC_t_auto.npy', roc, precision_recall_k, 'MAGIC t=default', target_file, i, regs)
                 individual_results.update(arboreto_results)
         
+        if pearson:
+            print(f"---> Running Pearson on Clean Data for DS{i}")
+            pearson_results = run_pearson(save_path + '/DS6_clean.npy', target_file, roc, precision_recall_k, 'Clean', i)
+            individual_results.update(pearson_results)
+            print(f"---> Running Pearson on Noisy Data for DS{i}")
+            pearson_results = run_pearson(save_path + '/DS6_45.npy', target_file, roc, precision_recall_k, 'Noisy', i)
+            individual_results.update(pearson_results)
+            if saucie:
+                print(f"---> Running Pearson on SAUCIE Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_SAUCIE.npy', target_file, roc, precision_recall_k, 'SAUCIE', i)
+                individual_results.update(pearson_results)
+            if scScope:
+                print(f"---> Running Pearson on scScope Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_scScope.npy', target_file, roc, precision_recall_k, 'scScope', i)
+                individual_results.update(pearson_results)
+            if deepImpute:
+                print(f"---> Running Pearson on DeepImpute Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_deepImpute.npy', target_file, roc, precision_recall_k, 'DeepImpute', i)
+                individual_results.update(pearson_results)
+            if magic:
+                print(f"---> Running Pearson on MAGIC t=2 Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_MAGIC_t_2.npy', target_file, roc, precision_recall_k, 'MAGIC t=2', i)
+                individual_results.update(pearson_results)
+                print(f"---> Running Pearson on MAGIC t=7 Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_MAGIC_t_7.npy', target_file, roc, precision_recall_k, 'MAGIC t=7', i)
+                individual_results.update(pearson_results)
+                print(f"---> Running Pearson on MAGIC t=default Data for DS{i}")
+                pearson_results = run_pearson(save_path + '/yhat_MAGIC_t_auto.npy', target_file, roc, precision_recall_k, 'MAGIC t=default', i)
+                individual_results.update(pearson_results)
+
         if genie:
             # get true regulator genes from SERGIO data
             reg_file = None
@@ -338,28 +385,28 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
             # Run GENIE3 on Clean Data
             print(f"---> Running GENIE3 on Clean Data for DS{i}")
             gene_names = [str(i) for i in range(x.shape[1])]
-            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)        
+            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)        
             gt, rescaled_vim = gt_benchmark(VIM_CLEAN, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                individual_results['GENIE3 Clean ROC_AUC'] = float('%.2f'%(roc_score))
+                individual_results['DS' + str(i) + ' GENIE3 Clean ROC_AUC'] = float('%.2f'%(roc_score))
             if precision_recall_k:
                 k = range(1, gt.size)
                 precision_k = precision_at_k(gt, rescaled_vim, k)
-                individual_results['GENIE3 Clean Precision@k'] = precision_k
+                individual_results['DS' + str(i) + ' GENIE3 Clean Precision@k'] = precision_k
 
             # Run GENIE3 on Noisy Data
             print(f"---> Running GENIE3 on Noisy Data for DS{i}")
             gene_names = [str(i) for i in range(y.shape[1])]
-            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)       
+            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)       
             gt, rescaled_vim = gt_benchmark(VIM_NOISY, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                individual_results['GENIE3 Noisy ROC_AUC'] = float('%.2f'%(roc_score))
+                individual_results['DS' + str(i) + ' GENIE3 Noisy ROC_AUC'] = float('%.2f'%(roc_score))
             if precision_recall_k:
                 k = range(1, gt.size)
                 precision_k = precision_at_k(gt, rescaled_vim, k)
-                individual_results['GENIE3 Noisy Precision@k'] = precision_k
+                individual_results['DS' + str(i) + ' GENIE3 Noisy Precision@k'] = precision_k
 
             # Run GENIE3 on SAUCIE Data
             if saucie:
@@ -367,17 +414,17 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on SAUCIE Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_saucie.shape[1])]
-                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_SAUCIE, target_file)
                 # np.save(save_path + '/VIM_SAUCIE.npy', rescaled_vim)
                 # np.save(save_path + '/gt_SAUCIE.npy', gt)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 SAUCIE ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 SAUCIE ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 SAUCIE Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 SAUCIE Precision@k'] = precision_k
             
             # Run GENIE3 on scScope Data
             if scScope:
@@ -387,15 +434,15 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on scScope Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_scscope.shape[1])]
-                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_scScope, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 scScope ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 scScope ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 scScope Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 scScope Precision@k'] = precision_k
 
             # Run GENIE3 on DeepImpute Data
             if deepImpute:
@@ -403,18 +450,18 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on DeepImpute Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_deepImpute.shape[1])]
-                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_deepImpute, target_file)
                 np.save(save_path + '/VIM_deepImpute.npy', rescaled_vim)
                 np.save(save_path + '/gt_deepImpute.npy', gt)
                 print("saved deepimpute files")
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 DeepImpute ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 DeepImpute ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 DeepImpute Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 DeepImpute Precision@k'] = precision_k
 
             # Run GENIE3 on MAGIC Data
             if magic:
@@ -424,39 +471,39 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on MAGIC t=2 for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t2.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 MAGIC t=2 ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=2 ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 MAGIC t=2 Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=2 Precision@k'] = precision_k
 
                 print(f"---> Running GENIE3 on MAGIC t=7 for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t7.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 MAGIC t=7 ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=7 ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 MAGIC t=7 Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=7 Precision@k'] = precision_k
                 
                 print(f"---> Running GENIE3 on MAGIC t=default for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t_auto.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
-                    individual_results['GENIE3 MAGIC t=default ROC_AUC'] = float('%.2f'%(roc_score))
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=default ROC_AUC'] = float('%.2f'%(roc_score))
                 if precision_recall_k:
                     k = range(1, gt.size)
                     precision_k = precision_at_k(gt, rescaled_vim, k)
-                    individual_results['GENIE3 MAGIC t=default Precision@k'] = precision_k
+                    individual_results['DS' + str(i) + ' GENIE3 MAGIC t=default Precision@k'] = precision_k
         # write individual results to JSON file
         with open(save_path + '/precision_recall_data.json', 'w') as fp:
             json.dump(individual_results, fp)

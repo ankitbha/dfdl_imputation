@@ -1,0 +1,13 @@
+# install BiocManager
+install.packages("BiocManager")
+
+# install Bioconductor core packages
+BiocManager::install()
+
+# install additional packages:
+BiocManager::install(c("WGCNA", "igraph", "devtools", "GeneOverlap", 'ggrepel'))
+
+devtools::install_github("NightingaleHealth/ggforestplot")
+
+# install Seurat v4, hdWGCNA currently does not work with Seurat v5
+install.packages('Seurat', repos = c('https://satijalab.r-universe.dev', 'https://cloud.r-project.org'))
