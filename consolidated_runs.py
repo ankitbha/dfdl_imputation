@@ -228,7 +228,7 @@ def run_pearson(path, target, roc, precision_recall_k, method_name, ind):
     print(ret_dict)
     return ret_dict
 
-def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute=True, magic=True, genie=True, pearson=False, arboreto=True, roc=True, precision_recall_k=True):
+def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute=True, magic=True, genie=True, pearson=False, arboreto=True, roc=True, precision_recall_k=True, run_with_regs=False):
     target_file = ''
     regs_path = ''
     results = {}
@@ -385,7 +385,11 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
             # Run GENIE3 on Clean Data
             print(f"---> Running GENIE3 on Clean Data for DS{i}")
             gene_names = [str(i) for i in range(x.shape[1])]
-            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)        
+            if not run_with_regs:
+                regs = None
+                gene_names = None
+
+            VIM_CLEAN = GENIE3(x, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)        
             gt, rescaled_vim = gt_benchmark(VIM_CLEAN, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -398,7 +402,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
             # Run GENIE3 on Noisy Data
             print(f"---> Running GENIE3 on Noisy Data for DS{i}")
             gene_names = [str(i) for i in range(y.shape[1])]
-            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)       
+            VIM_NOISY = GENIE3(y, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)       
             gt, rescaled_vim = gt_benchmark(VIM_NOISY, target_file)
             if roc:
                 roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -414,7 +418,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on SAUCIE Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_saucie.shape[1])]
-                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_SAUCIE = GENIE3(y_hat_saucie, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_SAUCIE, target_file)
                 # np.save(save_path + '/VIM_SAUCIE.npy', rescaled_vim)
                 # np.save(save_path + '/gt_SAUCIE.npy', gt)
@@ -434,7 +438,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on scScope Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_scscope.shape[1])]
-                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_scScope = GENIE3(y_hat_scScope, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_scScope, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -450,7 +454,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on DeepImpute Data for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_deepImpute.shape[1])]
-                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_deepImpute = GENIE3(y_hat_deepImpute, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_deepImpute, target_file)
                 np.save(save_path + '/VIM_deepImpute.npy', rescaled_vim)
                 np.save(save_path + '/gt_deepImpute.npy', gt)
@@ -471,7 +475,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on MAGIC t=2 for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t2.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t2, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -483,7 +487,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
 
                 print(f"---> Running GENIE3 on MAGIC t=7 for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t7.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t7, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
@@ -495,7 +499,7 @@ def run_simulations(datasets, sergio=True, saucie=True, scScope=True, deepImpute
                 
                 print(f"---> Running GENIE3 on MAGIC t=default for DS{i}")
                 gene_names = [str(i) for i in range(y_hat_magic_t_auto.shape[1])]
-                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100)#, regulators=regs, gene_names=gene_names)
+                VIM_MAGIC = GENIE3(y_hat_magic_t_auto, nthreads=12, ntrees=100, regulators=regs, gene_names=gene_names)
                 gt, rescaled_vim = gt_benchmark(VIM_MAGIC, target_file)
                 if roc:
                     roc_score = roc_auc_score(gt.flatten(), rescaled_vim.flatten())
