@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 from sklearn import metrics
 from scipy import interp
 import pandas as pd
-
+from tqdm import tqdm
 
 
 
@@ -89,7 +89,7 @@ class direct_model1_squarematrix:
         self.predict_output_dir = predict_output_dir
 
 
-    def load_data_TF2(self,indel_list,data_path, num_of_pair_ratio=1):  # cell type specific  ## random samples for reactome is not enough, need borrow some from keggp
+    def load_data_TF2(self,indel_list,data_path, num_of_pair_ratio=1, train=True):  # cell type specific  ## random samples for reactome is not enough, need borrow some from keggp
         import random
         import numpy as np
         xxdata_list = []
@@ -98,25 +98,40 @@ class direct_model1_squarematrix:
         count_set = [0]
         count_setx = 0
         for i in indel_list:#len(h_tf_sc)):
-            xdata = np.load(data_path+str(i)+'_xdata.npy')
-            ydata = np.load(data_path+str(i)+'_ydata.npy')
-            zdata = np.load(data_path+str(i)+'_zdata.npy')
+            try:
+                xdata = np.load(data_path+str(i)+'_xdata.npy').tolist()
+                ydata = np.load(data_path+str(i)+'_ydata.npy').tolist()
+                zdata = np.load(data_path+str(i)+'_zdata.npy').tolist()
 
-            num_of_pairs = round(num_of_pair_ratio*len(ydata))
-            all_k_list = list(range(len(ydata)))
-            select_k_list = all_k_list[0:num_of_pairs]
+                num_of_pairs = round(num_of_pair_ratio*len(ydata))
+                all_k_list = list(range(len(ydata)))
+                select_k_list = all_k_list[0:num_of_pairs]
 
-            for k in select_k_list:
-                xxdata_list.append(xdata[k,:,:,:])
-                yydata.append(ydata[k])
-                zzdata.append(zdata[k])
-            count_setx = count_setx + len(ydata)
-            count_set.append(count_setx)
+                for k in select_k_list:
+                    xxdata_list.append(xdata[k,:,:,:])
+                    yydata.append(int(ydata[k]))
+                    zzdata.append(zdata[k])
+                count_setx = count_setx + len(ydata)
+                count_set.append(count_setx)
+            except:
+                continue
             #print (i,len(ydata))
-        yydata_array = np.array(yydata)
-        yydata_x = yydata_array.astype('int')
         #print(np.array(xxdata_list).shape)
-        return((np.array(xxdata_list),yydata_x,count_set,np.array(zzdata)))
+        if train:
+            print("saving x")
+            self.x_train = np.array(xdata)
+            print("saving y")
+            self.y_train = np.array(ydata, dtype=np.int16)
+            print("saving z")
+            self.z_train = np.array(zdata)
+
+            self.count_set_train = np.array(count_set, dtype=np.int16)
+        else:
+            self.x_test = np.array(xdata)
+            self.y_test = np.array(ydata, dtype=np.int16)
+            self.z_test = np.array(zdata)
+
+            self.count_set = np.array(count_set, dtype=np.int16)
 
 
     def update_test_train_data(self, test_indel,epochs,num_of_pair_ratio=1):
@@ -127,19 +142,20 @@ class direct_model1_squarematrix:
             test_TF = test_indel
         train_TF = [i for i in self.whole_data_TF if i not in test_TF]  #
         #####################################################################
-        (self.x_train, self.y_train, self.count_set_train,self.z_train) = self.load_data_TF2(train_TF, self.data_path,num_of_pair_ratio)
-        (self.x_test, self.y_test, self.count_set,self.z_test) = self.load_data_TF2(test_TF, self.data_path,num_of_pair_ratio)
-        print(self.x_train.shape, 'x_train samples')
-        print(self.x_test.shape, 'x_test samples')
+        print("--> working ... loading train data")
+        self.load_data_TF2(train_TF, self.data_path,num_of_pair_ratio, train=True)
+        
+        print("--> working ... loading test data")
+        self.load_data_TF2(test_TF, self.data_path,num_of_pair_ratio, train=False)
+        
         if self.output_dir is not None:
-            self.save_dir = os.path.join(self.output_dir, str(test_indel) + '_saved_models' + str(epochs))  ## the result folder
+            self.save_dir = os.path.join(self.output_dir, str(test_indel[0]) + '_saved_models' + str(epochs))  ## the result folder
         else:
             self.save_dir="."
         if self.num_classes > 2:
             self.y_train = keras.utils.to_categorical(self.y_train, self.num_classes)
             self.y_test = keras.utils.to_categorical(self.y_test, self.num_classes)
-        print(self.y_train.shape, 'y_train samples')
-        print(self.y_test.shape, 'y_test samples')
+        
         ############
         if not os.path.isdir(self.save_dir):
             os.makedirs(self.save_dir)
@@ -251,7 +267,11 @@ class direct_model1_squarematrix:
             combined=keras.layers.Dense(1, activation='sigmoid')(combined)
 
             model = keras.Model(input_img_whole_list, combined)
-            sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+            sgd = None
+            try:
+                sgd = tf.keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+            except:
+                sgd = tf.keras.optimizers.legacy.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
             model.compile(optimizer=sgd, loss='binary_crossentropy', metrics=['accuracy'])
 
         early_stopping = keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=10, verbose=0, mode='auto')
@@ -527,7 +547,7 @@ class direct_model1_squarematrix:
 
         divide_part = 3#
 
-        for i in range(0, divide_part):
+        for i in tqdm(range(0, divide_part)):
             if i==0:
                 test_indel=indel_list0
             elif i==1:
@@ -535,7 +555,9 @@ class direct_model1_squarematrix:
             elif i==2:
                 test_indel=indel_list2
 
+            print("--> working ... updating test and train data")
             self.update_test_train_data(test_indel,self.epochs,num_of_pair_ratio)
+            print("--> working ... constructing model")
             self.construct_model(self.x_train)
             model = self.model
             callbacks_list = self.callbacks_list
@@ -552,17 +574,17 @@ class direct_model1_squarematrix:
                 print('Not using data augmentation.')
 
                 x_train_list=[]
-                for j in range(0,n):
+                for j in tqdm(range(0,n)):
                     x_train_list.append(x_train[:,j,:,:,np.newaxis])
                 history = model.fit(x_train_list, y_train,batch_size=self.batch_size,epochs=self.epochs,validation_split=0.2,
                           shuffle=True, callbacks=callbacks_list)
             # Save model and weights
             model_path = os.path.join(self.save_dir, self.model_name)
             model.save(model_path)
-            print('Saved trained model at %s ' % model_path)
             x_test_list=[]
             for j in range(0,n):
                 x_test_list.append(x_test[:,j,:,:,np.newaxis])
+            print("--> working ... testing model")
             self.test_model(model,x_test_list,y_test,z_test,self.save_dir,history,test_indel)
 
     def predict_use_model(self, weight_path=""):
@@ -599,26 +621,26 @@ class direct_model1_squarematrix:
             df.to_csv(self.predict_output_dir +str(test_indel)+ 'end_z_test.csv')
 
 
-def load_indel_lists_from_file(cross_validation_fold_divide_file):
-    s = open(cross_validation_fold_divide_file)
-    cross_fold = []
+    def load_indel_lists_from_file(self, cross_validation_fold_divide_file):
+        s = open(cross_validation_fold_divide_file)
+        cross_fold = []
 
-    for line in s:
-        line=line.strip()
-        separation = line.split(',')
-        indel_list = []
-        for i in range(0, len(separation)):
-            indel_list.append(separation[i])
-            self.whole_data_TF.append(separation[i])
-        cross_fold.append(indel_list)
+        for line in s:
+            line=line.strip()
+            separation = line.split(',')
+            indel_list = []
+            for i in range(0, len(separation)):
+                indel_list.append(separation[i])
+                self.whole_data_TF.append(separation[i])
+            cross_fold.append(indel_list)
 
-    indel_list0=cross_fold[0]
-    indel_list1=cross_fold[1]
-    indel_list2=cross_fold[2]
-    print('indel_list0',indel_list0)
-    print('indel_list1',indel_list1)
-    print('indel_list2',indel_list2)
-    return indel_list0,indel_list1,indel_list2
+        indel_list0=cross_fold[0]
+        indel_list1=cross_fold[1]
+        indel_list2=cross_fold[2]
+        print('indel_list0',indel_list0)
+        print('indel_list1',indel_list1)
+        print('indel_list2',indel_list2)
+        return indel_list0,indel_list1,indel_list2
 
 
 
@@ -658,7 +680,12 @@ if __name__ == '__main__':
 
     else:
         if args.cross_validation_fold_divide_file is not None:
-            main()
+            tcs = direct_model1_squarematrix(num_batches=args.num_batches,
+                data_path=args.data_path,
+                output_dir=args.output_dir)
+            indel_list0,indel_list1,indel_list2=tcs.load_indel_lists_from_file(args.cross_validation_fold_divide_file)
+
+            tcs.train_and_test_model_dividePart_assignTForder(indel_list0,indel_list1,indel_list2)
         else:
             print("Require input cross_validation_fold_divide_file")
 
