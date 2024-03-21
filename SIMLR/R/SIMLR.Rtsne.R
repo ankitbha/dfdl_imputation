@@ -22,6 +22,15 @@ SIMLR.Rtsne <- function( I, J, V, dims = 2, perplexity = 30, theta = 0.5, verbos
     init <- TRUE
   }
   
-  return(Rtsne_cpp(I,J,V,dims,perplexity,theta,verbose,max_iter,Y_init,init))
+  n <- max(I) 
+  m <- max(J)
+  
+  dense_matrix <- matrix(0, nrow = n, ncol = m)
+  dense_matrix[cbind(I, J)] <- V
+  
+  return(Rtsne(dense_matrix, dims = dims, perplexity = perplexity, theta = theta, verbose = verbose, max_iter = max_iter))
+
+  
+  #return(Rtsne_cpp(I,J,V,dims,perplexity,theta,verbose,max_iter,Y_init,init))
   
 }

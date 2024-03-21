@@ -1,0 +1,104 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+#<a href="url"><img src="http://bioinformatics.victorchang.edu.au/projects/cidr/images/cidr_logo.png" align="left" height="96" alt="CIDR"></a>
+
+#Clustering through Imputation and Dimensionality Reduction
+
+Ultrafast and accurate clustering through imputation and dimensionality
+reduction for single-cell RNA-seq data.
+
+Most existing dimensionality reduction and clustering packages for single-cell RNA-Seq (scRNA-Seq) data deal with dropouts by heavy modelling and computational machinery. Here we introduce _CIDR_ (Clustering through Imputation and Dimensionality Reduction), an ultrafast
+algorithm which uses a novel yet very simple ‘implicit imputation’ approach to alleviate the
+impact of dropouts in scRNA-Seq data in a principled manner.
+
+For more details about _CIDR_, refer to the [paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1188-0): 
+Peijie Lin, Michael Troup, Joshua W.K. Ho, CIDR: Ultrafast and accurate clustering through imputation for single-cell RNA-seq data. _Genome Biology_ 2017 Mar 28;18(1):59.
+
+_CIDR_ is maintained by Dr Joshua Ho j.ho@victorchang.edu.au.
+
+##Getting Started
+
+* Make sure your version of R is at least 3.1.0.
+* _CIDR_ has been tested primarily on the Linux and Mac platforms.  _CIDR_ has also been tested on the Windows platform - however this requires the use of an external software package _Rtools_.
+* If you are on the Windows platorm, ensure that [Rtools](https://cran.r-project.org/bin/windows/Rtools/) is installed. Rtools is software (installed external to R) that assists in building R packages, and R itself.  Note that the downlaod for _Rtools_ is in the order of 100M.
+* Install the CRAN package _devtools_ package which will be used to install _CIDR_ and its dependencies:
+```{r, eval=F}
+## this is an R command
+install.packages("devtools")
+```
+
+* Install the _CIDR_ package directly from the Github repository (including any dependencies):
+
+```{r, eval=F}
+## this is an R command
+devtools::install_github("VCCRI/CIDR")
+## Note that for some Windows platforms, you may be asked to re-install RTools
+## - even though it may already have been installed.  Say yes if prompted.
+## Your windows platform may require the specific version of RTools being suggested.
+##
+## For Mac platforms, ensure that the software "Xcode" and "Command Line Tools" are
+## installed, by issuing the following command from a terminal prompt:
+##  /usr/bin/clang --version
+##
+```
+
+#Examples
+##Simulated Data
+Test the newly installed _CIDR_ package:
+
+```{r}
+library(cidr)
+example("cidr")
+```
+
+##Biological Datasets
+Examples of applying _CIDR_ to real biological datasets can be found at this [Github repository](https://github.com/VCCRI/CIDR-examples).  The name of the repository is _CIDR-examples_. 
+
+Clicking on the _Clone or Download_ button in the Github repository for _CIDR-examples_ will enable the user to download a zip file containing the raw biological data and the R files for the examples.  The user can then extract the files and run the provided R examples.
+
+###Human Brain scRNA-Seq Dataset
+_CIDR-examples_ contains a human brain single-cell RNA-Seq dataset, located in the _Brain_ folder. In this dataset
+there are 420 cells in 8 cell types after we exclude hybrid cells.  
+
+Reference for the human brain dataset:
+
+Darmanis, S. _et al._ A survey of human brain transcriptome diversity at the single cell level.
+_Proceedings of the National Academy of Sciences_ 112, 7285–7290 (2015).
+
+###Human Pancreatic Islet scRNA-Seq Dataset
+_CIDR-examples_ contains a human pancreatic islet single-cell RNA-Seq dataset, located in the _PancreaticIslet_ folder. In this dataset there are 60 cells in 6 cell types after we exclude undefined cells and bulk RNA-Seq samples.  
+
+Reference for the human pancreatic islet dataset:
+
+Li, J. _et al._ Single-cell transcriptomes reveal characteristic features of human pancreatic islet
+cell types. _EMBO Reports_ 17, 178–187 (2016).
+
+##Troubleshooting
+###Masking of _hclust_
+_CIDR_ utilises the _hclust_ function from the base _stats_ package.  Loading _CIDR_ masks _hclust_ in other packages automatically. 
+However, if any package with an _hclust_ function (e.g., _flashClust_) is loaded after _CIDR_, the name clashing can possibly cause a problem.
+In this case unloading that package should resolve the issue.
+
+###Reinstallation of _CIDR_ - cidr.rdb corruption
+In some cases when installing a new version of _CIDR_ on top of an existing version may result in the following error message:
+
+```Error in fetch(key) : lazy-load database '/Library/Frameworks/R.framework/Versions/3.3/Resources/library/cidr/help/cidr.rdb' is corrupt```
+
+In this case, one way to resolve this issue is to reinstall the _devtools_ package:
+```{r, eval=F}
+install.packages("devtools")
+## Click “Yes” in “Updating Loaded Packages”
+devtools::install_github("VCCRI/CIDR",force=TRUE)
+```
+Some users might have installed an older version of RcppEigen. CIDR requires RcppEigen version >=0.3.2.9.0. Please re-install the latest version of this package if necessary.

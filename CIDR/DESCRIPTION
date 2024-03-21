@@ -1,0 +1,27 @@
+Package: cidr
+Type: Package
+Title: Clustering through Imputation and Dimensionality Reduction
+Version: 0.1.5
+Author: Peijie Lin, Michael Troup
+Maintainer: Peijie Lin <p.lin@victorchang.edu.au>
+Description: Ultrafast and accurate clustering through imputation and
+    dimensionality reduction for single cell RNA-Seq (scRNA-Seq) data
+License: GPL (>=2)
+LazyData: TRUE
+Depends:
+    R (>= 3.1.0)
+Imports:
+    Rcpp (>= 0.12.0),
+    ade4,
+    clusterCrit,
+    minpack.lm,
+    mclust,
+    NbClust,
+    RcppParallel (>= 4.3.20),
+    RcppEigen (>= 0.3.2.9.0)
+LinkingTo: Rcpp, RcppParallel, RcppEigen
+RoxygenNote: 5.0.1
+NeedsCompilation: yes
+SystemRequirements: GNU make
+Suggests:
+    testthat

@@ -41,7 +41,7 @@ import arboreto as arboreto
 from utils import gt_benchmark, reload_modules, delete_modules 
 from utils import plot_precisions, precision_at_k
 
-def run_sergio(input_file, reg_file, ind):
+def run_sergio(input_file, reg_file, ind, file_extension = ''):
     # Run SERGIO
     n_genes = 1200
     if ind == 1:
@@ -68,11 +68,11 @@ def run_sergio(input_file, reg_file, ind):
     save_path = './imputations/' + ds_str
     
     # Save simulated data variants
-    np.save(save_path + '/DS6_clean', expr_clean)
-    np.save(save_path + '/DS6_expr', expr)
+    np.save(save_path + '/DS6_clean' + file_extension, expr_clean )
+    np.save(save_path + '/DS6_expr' + file_extension, expr)
     cmat_clean = sim.convert_to_UMIcounts(expr)
     cmat_clean = np.concatenate(cmat_clean, axis = 1)
-    np.save(save_path + '/DS6_clean_counts', cmat_clean)
+    np.save(save_path + '/DS6_clean_counts' + file_extension, cmat_clean)
 
     # Add Technical Noise - Steady State Simulations
     expr_O = sim.outlier_effect(expr, outlier_prob = 0.01, mean = 5, scale = 1)
@@ -81,7 +81,7 @@ def run_sergio(input_file, reg_file, ind):
     expr_O_L_D = np.multiply(binary_ind, expr_O_L)
     count_matrix = sim.convert_to_UMIcounts(expr_O_L_D)
     count_matrix = np.concatenate(count_matrix, axis = 1)
-    np.save(save_path + '/DS6_45', count_matrix)
+    np.save(save_path + '/DS6_noisy' + file_extension, count_matrix)
 
 def run_saucie(x_path, y_path, ind):
     #reload_modules('tensorflow.compat')

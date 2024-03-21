@@ -2,7 +2,7 @@
 "SIMLR_Large_Scale" <- function( X, c, k = 10, kk = 100, if.impute = FALSE, normalize = FALSE ) {
     
     # check the if.impute parameter
-    if(if.impute == TRUE) {
+    if(if.impute == TRUE){
         X = t(X)
         X_zeros = which(X==0,arr.ind=TRUE)
         if(length(X_zeros)>0) {
@@ -15,7 +15,7 @@
     }
     
     # check the normalize parameter
-    if(normalize == TRUE) {
+    if(normalize == TRUE){
         X = t(X)
         X = X - min(as.vector(X))
         X = X / max(as.vector(X))

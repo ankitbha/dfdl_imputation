@@ -1,0 +1,118 @@
+---
+title: "sc3_implementation"
+output: html_document
+---
+
+```{r setup, include=FALSE, results='hide'}
+install.packages("BiocManager")
+install.packages("scran")
+BiocManager::install("scater")
+BiocManager::install("SC3")
+```
+
+```{r, include=FALSE, results='hide'}
+library(SC3)
+library(scater)
+library(SingleCellExperiment)
+library(aricode)
+```
+
+```{r, include=FALSE, results='hide'}
+data <- read.table('../imputations/DS1/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+noisy_data <- read.table('../imputations/DS1/DS6_45.csv', header=TRUE, sep=',')
+noisy_matrix <- as.matrix(noisy_data)
+
+shape_file <- '../imputations/DS1/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+sce <- SingleCellExperiment(assays = list(counts = data_matrix))
+rowData(sce)$feature_symbol <- rownames(data)
+#size_factors <- calculateSizeFactors(sce)
+#sce <- normalize(sce)
+logcounts(sce) <- log2(counts(sce) + 1)
+#sce <- sc3_prepare(sce)
+sce <- sc3(sce, ks = types, biology = TRUE, gene_filter = FALSE)
+pred_clusters <- colData(sce)$sc3_9_clusters
+nmi_ds1_clean <- NMI(group_list, pred_clusters)
+
+data <- read.table('../imputations/DS2/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+noisy_data <- read.table('../imputations/DS2/DS6_45.csv', header=TRUE, sep=',')
+noisy_matrix <- as.matrix(noisy_data)
+
+shape_file <- '../imputations/DS2/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+sce <- SingleCellExperiment(assays = list(counts = data_matrix))
+rowData(sce)$feature_symbol <- rownames(data)
+#size_factors <- calculateSizeFactors(sce)
+#sce <- normalize(sce)
+logcounts(sce) <- log2(counts(sce) + 1)
+#sce <- sc3_prepare(sce)
+sce <- sc3(sce, ks = types, biology = TRUE, gene_filter = FALSE)
+pred_clusters <- colData(sce)$sc3_9_clusters
+nmi_ds2_clean <- NMI(group_list, pred_clusters)
+
+data <- read.table('../imputations/DS3/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+noisy_data <- read.table('../imputations/DS3/DS6_45.csv', header=TRUE, sep=',')
+noisy_matrix <- as.matrix(noisy_data)
+
+shape_file <- '../imputations/DS3/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+sce <- SingleCellExperiment(assays = list(counts = data_matrix))
+rowData(sce)$feature_symbol <- rownames(data)
+#size_factors <- calculateSizeFactors(sce)
+#sce <- normalize(sce)
+logcounts(sce) <- log2(counts(sce) + 1)
+#sce <- sc3_prepare(sce)
+sce <- sc3(sce, ks = types, biology = TRUE, gene_filter = FALSE)
+pred_clusters <- colData(sce)$sc3_9_clusters
+nmi_ds3_clean <- NMI(group_list, pred_clusters)
+
+print(c(nmi_ds1_clean, nmi_ds2_clean, nmi_ds3_clean))
+```
+
+```{r}
+#install.packages("aricode", type='source')
+sce <- SingleCellExperiment(assays = list(counts = noisy_matrix))
+rowData(sce)$feature_symbol <- rownames(noisy_data)
+logcounts(sce) <- log2(counts(sce) + 1)
+
+gene_variances <- matrixStats::rowVars(logcounts(sce))
+sce <- sce[gene_variances > 0, ]
+
+sce <- sc3(sce, ks = types, biology = TRUE, gene_filter = FALSE)
+pred_clusters <- colData(sce)$sc3_9_clusters
+nmi_ds1_noisy <- NMI(group_list, pred_clusters)
+
+print(c(nmi_ds1_clean, nmi_ds1_noisy))
+```
+
+
+
+
+

@@ -1,0 +1,279 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+(!!!!!FOR MAC SILICON CHIPS ONLY!!!!)
+Create R folder if doesn't exist
+PLEASE REPLACE WITH YOUR MACHINE'S GCC Version
+```{r}
+dir.create('~/.R')
+file.create('~/.R/Makevars')
+fileConn<-file("~/.R/Makevars")
+str1 <- "FC = /opt/homebrew/Cellar/gcc/13.2.0/bin/gfortran"
+str2 <- "F77 = /opt/homebrew/Cellar/gcc/13.2.0/bin/gfortran"
+str3 <- "FLIBS = -L/opt/homebrew/Cellar/gcc/13.2.0/lib/gcc/11"
+writeLines(c(str1,str2,str3), fileConn)
+close(fileConn)
+```
+
+
+```{r, results='hide'}
+install.packages("ade4", type="source")
+install.packages("clusterCrit", type="source")
+install.packages("minpack.lm", type="source")
+install.packages("mclust", type="source")
+install.packages("RcppParallel", type="source")
+install.packages("NbClust", type="source")
+```
+```{r, results='hide'}
+devtools::install_github("VCCRI/CIDR")
+library(cidr)
+```
+
+
+Load CIDR and load dataset
+```{r}
+library(ade4)
+library("clusterCrit")
+library("minpack.lm")
+library("mclust")
+library("RcppParallel")
+library("NbClust")
+
+source("./R/calc_npc.R")
+source("./R/cidrPcoa.R")
+source("./R/RcppExports.R")
+source("./R/scSimulator.R")
+source("./R/CIDR.R")
+
+data <- read.table('../imputations/DS1/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+```
+
+```{r, results='hide'}
+scData <- scDataConstructor(data_matrix)
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+```
+
+Get true clusters and number of  clusters
+```{r}
+shape_file <- '../imputations/DS1/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+print(n)
+```
+
+Calculate CIDR Clusters
+```{r, results='hide'}
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+```
+
+```{r}
+#install.packages("aricode", type="source")
+#library(aricode)
+#install.packages("scorer")
+#library(scorer)
+pred_clusters <- scData@clusters
+
+nmi_ds1 = NMI(group_list, pred_clusters)
+print(nmi_ds1)
+```
+
+### DS1
+```{r, results='hide'}
+data <- read.table('../imputations/DS1/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+scData <- scDataConstructor(data_matrix)
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS1/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds1 = NMI(group_list, pred_clusters)
+print(nmi_ds1)
+```
+
+
+### DS2
+```{r, results='hide'}
+data <- read.table('../imputations/DS2/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+scData <- scDataConstructor(data_matrix)
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS2/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds2 = NMI(group_list, pred_clusters)
+print(nmi_ds2)
+```
+
+```{r, results='hide'}
+data <- read.table('../imputations/DS3/DS6_clean.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+scData <- scDataConstructor(data_matrix)
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS3/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds3 = NMI(group_list, pred_clusters)
+```
+```{r}
+print(c(nmi_ds1, nmi_ds2, nmi_ds3))
+```
+
+## Noisy Data
+
+### DS1
+```{r, results='hide'}
+install.packages("aricode", type="source")
+library(aricode)
+
+data <- read.table('../imputations/DS1/DS6_45.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+cpm_data <- t(t(data_matrix))*1000000
+scData <- scDataConstructor(cpm_data, tagType = "cpm")
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS1/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds1 = NMI(group_list, pred_clusters)
+
+data <- read.table('../imputations/DS2/DS6_45.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+cpm_data <- t(t(data_matrix))*1000000
+scData <- scDataConstructor(cpm_data, tagType = "cpm")
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS2/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds2 = NMI(group_list, pred_clusters)
+
+data <- read.table('../imputations/DS3/DS6_45.csv', header=TRUE, sep=',')
+data_matrix <- as.matrix(data)
+cpm_data <- t(t(data_matrix))*1000000
+scData <- scDataConstructor(cpm_data, tagType = "cpm")
+scData <- determineDropoutCandidates(scData)
+scData <- wThreshold(scData)
+scData <- scDissim(scData)
+scData <- scPCA(scData)
+scData <- nPC(scData)
+
+shape_file <- '../imputations/DS3/expr_shape.csv'
+numpy_data <- read.table(shape_file, header=TRUE, sep=',')
+true_clusters <- as.matrix(numpy_data)
+n <- true_clusters[3]
+types <- true_clusters[1]
+num_groups <- ncol(data) / n
+group_list <- rep(1:num_groups, each = n)
+
+names(group_list) <- colnames(df)
+
+nCluster(scData)
+scData <- scCluster(scData, nCluster=types) 
+
+pred_clusters <- scData@clusters
+
+nmi_ds3 = NMI(group_list, pred_clusters)
+```
+
+```{r}
+print(c(nmi_ds1, nmi_ds2, nmi_ds3))
+```
+
+
+
