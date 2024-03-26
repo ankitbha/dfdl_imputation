@@ -41,17 +41,16 @@ import arboreto as arboreto
 from utils import gt_benchmark, reload_modules, delete_modules 
 from utils import plot_precisions, precision_at_k
 
-def run_sergio(input_file, reg_file, ind, file_extension = ''):
+def run_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300, file_extension = ''):
     # Run SERGIO
-    n_genes = 1200
     if ind == 1:
         n_genes = 100
     if ind == 2:
         n_genes = 400
     sim = sergio(
         number_genes=n_genes, 
-        number_bins = 9, 
-        number_sc = 300,
+        number_bins = n_bins, 
+        number_sc = n_sc,
         # In paper
         noise_params = 1,
         # In paper
