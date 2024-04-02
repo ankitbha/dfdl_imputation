@@ -74,7 +74,7 @@ def process_iteration(iteration, target_file, regs_path, master_regs, load_dir, 
             file_copy.write(f'{t},{regs},{",".join(regulators)},{",".join(hill_values)},{",".join(other_hill_values)}\n')
     
     #print(chosen_pair, min_hill, max_hill, random_hill)
-    run_sergio(temp_target, regs_path, i, file_extension)
+    run_sergio(temp_target, regs_path, i, file_extension=file_extension)
 
     clean_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean{file_extension}.npy")))
     pearson = Pearson(np.transpose(clean_df), '')
