@@ -57,6 +57,7 @@ def run_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300, file
         decays=0.8, 
         sampling_state=15, 
         noise_type='dpd')
+    
     sim.build_graph(input_file_taregts=input_file, input_file_regs=reg_file, shared_coop_state=2)
     sim.simulate()
     
