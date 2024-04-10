@@ -129,7 +129,7 @@ def add_edge_and_check_cycle(chosen_regulator, chosen_target, graph):
                 return True
     return False
 
-def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension=''):
+def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension='', clean='clean'):
     regulators = {}
     targets = {}
     chosen_pair = None
@@ -273,11 +273,11 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             ns = [str(x[2]) for x in target[1]]
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
-    clean_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean.npy")))
     run_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
-    other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean{file_extension}.npy")))
+    sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
+    other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
     
-    differences = other_df - clean_df
+    differences = other_df - sergio_df
     gaussian_params = differences.apply(fit_gaussian, axis=1)
     gaussian_params_with_index = gaussian_params.reset_index().rename(columns={'index': 'original_index'})
     
