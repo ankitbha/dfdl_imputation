@@ -88,7 +88,48 @@ def process_iteration(iteration, target_file, regs_path, master_regs, load_dir, 
     pearson = pd.DataFrame(p_values, index=pearson.columns, columns=pearson.columns)
     return pearson, chosen_pair, temp_target, file_extension
 
-def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, imp_dir, dataset_id, file_extension=''):
+def add_edge_method(regulators, targets, master_regs, n_genes):
+    chosen_target = random.randint(0, n_genes - 1)
+    chosen_regulator = random.choice(list(regulators.keys()))
+    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target == chosen_regulator:
+        chosen_target = random.randint(0, n_genes - 1)
+    while chosen_regulator in [t[0] for t in targets[chosen_target]] or chosen_target == chosen_regulator:
+        chosen_regulator = random.choice(list(regulators.keys()))
+    return chosen_regulator, chosen_target
+
+def run_dfs(node, graph, visited, rec_stack):
+    visited[node] = True
+    rec_stack[node] = True
+
+    for neighbour in graph.get(node, []):
+        if neighbour not in visited:
+            visited[neighbour] = False
+            rec_stack[neighbour] = False
+        if not visited[neighbour]:
+            if run_dfs(neighbour, graph, visited, rec_stack):
+                return True
+        elif rec_stack[neighbour]:
+            return True
+    rec_stack[node] = False
+    return False
+
+def add_edge_and_check_cycle(chosen_regulator, chosen_target, graph):
+    if chosen_regulator not in graph:
+        graph[chosen_regulator] = []
+    graph[chosen_regulator].append(chosen_target)
+
+    all_nodes = set(graph.keys()) | {node for neighbours in graph.values() for node in neighbours}
+
+    visited = {node: False for node in all_nodes}
+    rec_stack = {node: False for node in all_nodes}
+
+    for node in graph:
+        if not visited[node]:
+            if run_dfs(node, graph, visited, rec_stack):
+                return True
+    return False
+
+def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension=''):
     regulators = {}
     targets = {}
     chosen_pair = None
@@ -120,33 +161,108 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
     expr_name = 'DS6_expr.npy'
     expr = np.load(os.path.join(load_dir, expr_name))
     genes = expr.shape[1]
-    chosen_target = random.randint(0, genes - 1)
-    chosen_regulator = random.choice(list(regulators.keys()))
-    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target == chosen_regulator:
-        chosen_target = random.randint(0, genes - 1)
 
-    if add_edge:
-        min_hill = 1.0
-        max_hill = 3.0
-        if chosen_target in targets:
-            min_hill = np.min([float(hill[1]) for hill in targets[chosen_target]])
-            max_hill = np.max([float(hill[1]) for hill in targets[chosen_target]])
-        random_hill = random.uniform(min_hill, max_hill)
+    chosen_pairs = []
+    chosen_tuples = []
+    target_sub_map = {}
+    for target in targets:
+        target_sub_map[target] = 0
 
-    clean_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean.npy")))
-    if chosen_target not in targets:
-            targets[chosen_target] = [(chosen_regulator, random_hill, 2.0)]
-    else:
-        if add_edge:
-            targets[chosen_target].append((chosen_regulator, random_hill, 2.0))
-        else:
-            pass # need to remove
+    regulator_adjacency_list = {}
+    for reg in regulators:
+        for tuple in regulators[reg]:
+            target = tuple[0]
+            if reg not in regulator_adjacency_list.keys():
+                regulator_adjacency_list[reg] = [target]
+            else:
+                regulator_adjacency_list[reg].append(target) 
     
-    if add_edge:
-        regulators[chosen_regulator].append((chosen_target, random_hill, 2.0))
+    if multiple_edges:
+        num_edges = [len(targs) for targs in regulators.values()]
+        total_mods = int(sum(num_edges) * 0.3)
+        for i in range(total_mods):
+            add = random.choice([True])
+            if add:
+                has_cycle = True
+                cycle_iter = 50
+                while has_cycle:
+                    chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                    has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+                    cycle_iter -= 1
+                if cycle_iter == 0:
+                    continue
+                #target_sub_map[chosen_target] -= 1
+            else:
+                chosen_target = random.choice(list(targets.keys()))
+                while all([t[0] in master_regs for t in targets[chosen_target]]) or len(targets[chosen_target]) - target_sub_map[chosen_target] <= 1 or chosen_target in master_regs:
+                    chosen_target = random.choice(list(targets.keys()))
+                target_sub_map[chosen_target] += 1
+                chosen_regulator = random.choice([t[0] for t in targets[chosen_target] if t[0] not in master_regs])
+                while chosen_regulator in master_regs or chosen_regulator == chosen_target:
+                    chosen_regulator = random.choice([t[0] for t in targets[chosen_target] if t[0] not in master_regs])
+            temp_tuple = (chosen_regulator, chosen_target)
+            if temp_tuple not in chosen_pairs:
+                chosen_pairs.append(temp_tuple)
+                chosen_tuples.append((chosen_regulator, chosen_target, add))
+            else:
+                i -= 1
     else:
-        pass # need to remove
-    chosen_pair = (chosen_regulator, chosen_target)
+        add = add_edge
+        if add:
+            has_cycle = True
+            while has_cycle:
+                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+        else:
+            chosen_target = random.choice(list(targets.keys()))
+            while all([t[0] in master_regs for t in targets[chosen_target]]) or len(targets[chosen_target]) <= 1:
+                chosen_target = random.choice(list(targets.keys()))
+            chosen_regulator = random.choice([t[0] for t in targets[chosen_target] if t[0] not in master_regs])
+            while chosen_regulator in master_regs:
+                chosen_regulator = random.choice([t[0] for t in targets[chosen_target] if t[0] not in master_regs])
+        chosen_tuples.append((chosen_regulator, chosen_target, add))
+    
+    chosen_regulators = [pair[0] for pair in chosen_tuples]
+    chosen_targets = [pair[1] for pair in chosen_tuples]
+    add_subtract = [pair[2] for pair in chosen_tuples]
+    
+    new_edges = []
+    for i in range(len(chosen_targets)):
+        chosen_target = chosen_targets[i]
+        chosen_regulator = chosen_regulators[i]
+        add = add_subtract[i]
+        if add:
+            has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            cycle_iter = 50
+            while has_cycle:
+                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+                cycle_iter -= 1
+                if cycle_iter == 0:
+                    break
+            if cycle_iter == 0:
+                continue
+            min_hill = 1.0
+            max_hill = 3.0
+            if chosen_target in targets:
+                min_hill = np.min([float(hill[1]) for hill in targets[chosen_target]])
+                max_hill = np.max([float(hill[1]) for hill in targets[chosen_target]])
+            random_hill = random.uniform(min_hill, max_hill)
+            if chosen_target not in targets:
+                targets[chosen_target] = [(chosen_regulator, random_hill, 2.0)]
+            else:
+                targets[chosen_target].append((chosen_regulator, random_hill, 2.0))
+            if chosen_regulator not in regulators:
+                regulator_adjacency_list[chosen_regulator] = [chosen_target]
+            else:
+                regulator_adjacency_list[chosen_regulator].append(chosen_target)
+
+            new_edges.append((chosen_regulator, chosen_target, random_hill, 2.0))
+        else:
+            if chosen_target in targets:
+                targets[chosen_target] = [t for t in targets[chosen_target] if t[0] != chosen_regulator]
+            if chosen_regulator in regulators:
+                regulators[chosen_regulator] = [r for r in regulators[chosen_regulator] if r[0] != chosen_target]
 
     with open(temp_target, 'w') as file_copy:
         for ind, target in enumerate(targets.items()):
@@ -157,14 +273,21 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             ns = [str(x[2]) for x in target[1]]
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
+    clean_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean.npy")))
     run_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
     other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_clean{file_extension}.npy")))
     
     differences = other_df - clean_df
     gaussian_params = differences.apply(fit_gaussian, axis=1)
     gaussian_params_with_index = gaussian_params.reset_index().rename(columns={'index': 'original_index'})
-    ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=False)
-    rank = ranked_gaussian_params.index.get_loc(chosen_target)
-    rank += 1
+    
+    final_ranks = []
+    for iter, target in enumerate(chosen_targets):
+        chosen_reg = chosen_regulators[iter]
+        add_sub = add_subtract[iter]
+        ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=(not add_sub))
+        rank = ranked_gaussian_params.index.get_loc(chosen_target)
+        rank += 1
+        final_ranks.append((chosen_reg, target, add_sub, rank))
 
-    return ranked_gaussian_params, chosen_pair, rank, temp_target, file_extension
+    return ranked_gaussian_params, final_ranks, temp_target, file_extension, iteration
