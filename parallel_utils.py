@@ -90,11 +90,12 @@ def process_iteration(iteration, target_file, regs_path, master_regs, load_dir, 
 
 def add_edge_method(regulators, targets, master_regs, n_genes):
     chosen_target = random.randint(0, n_genes - 1)
-    chosen_regulator = random.choice(list(regulators.keys()))
-    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target == chosen_regulator:
+    regs = list(regulators.keys())
+    chosen_regulator = random.choice(regs)
+    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target in regs or chosen_target == chosen_regulator:
         chosen_target = random.randint(0, n_genes - 1)
     while chosen_regulator in [t[0] for t in targets[chosen_target]] or chosen_target == chosen_regulator:
-        chosen_regulator = random.choice(list(regulators.keys()))
+        chosen_regulator = random.choice(regs)
     return chosen_regulator, chosen_target
 
 def run_dfs(node, graph, visited, rec_stack):
@@ -181,16 +182,17 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
         num_edges = [len(targs) for targs in regulators.values()]
         total_mods = int(sum(num_edges) * 0.3)
         for i in range(total_mods):
-            add = random.choice([True])
+            add = random.choice([True, False])
             if add:
-                has_cycle = True
-                cycle_iter = 50
-                while has_cycle:
-                    chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                    has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-                    cycle_iter -= 1
-                if cycle_iter == 0:
-                    continue
+                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                # has_cycle = True
+                # cycle_iter = 50
+                # while has_cycle:
+                #     chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                #     has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+                #     cycle_iter -= 1
+                # if cycle_iter == 0:
+                #     continue
                 #target_sub_map[chosen_target] -= 1
             else:
                 chosen_target = random.choice(list(targets.keys()))
@@ -209,10 +211,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
     else:
         add = add_edge
         if add:
-            has_cycle = True
-            while has_cycle:
-                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            #has_cycle = True
+            #while has_cycle:
+            chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+            #has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
         else:
             chosen_target = random.choice(list(targets.keys()))
             while all([t[0] in master_regs for t in targets[chosen_target]]) or len(targets[chosen_target]) <= 1:
@@ -232,16 +234,17 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
         chosen_regulator = chosen_regulators[i]
         add = add_subtract[i]
         if add:
-            has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-            cycle_iter = 50
-            while has_cycle:
-                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-                cycle_iter -= 1
-                if cycle_iter == 0:
-                    break
-            if cycle_iter == 0:
-                continue
+            # if multiple_edges:
+            # has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            # cycle_iter = 50
+            # while has_cycle:
+            #     chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+            #     has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            #     cycle_iter -= 1
+            #     if cycle_iter == 0:
+            #         break
+            # if cycle_iter == 0:
+            #     continue
             min_hill = 1.0
             max_hill = 3.0
             if chosen_target in targets:
@@ -285,9 +288,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
     for iter, target in enumerate(chosen_targets):
         chosen_reg = chosen_regulators[iter]
         add_sub = add_subtract[iter]
-        ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=(not add_sub))
-        rank = ranked_gaussian_params.index.get_loc(chosen_target)
+        ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=False)#ascending=(not add_sub))
+        rank = ranked_gaussian_params.index.get_loc(target)
         rank += 1
-        final_ranks.append((chosen_reg, target, add_sub, rank))
+        value = ranked_gaussian_params.loc[ranked_gaussian_params['original_index'] == target]
+        final_ranks.append((chosen_reg, target, add_sub, rank, value))
 
     return ranked_gaussian_params, final_ranks, temp_target, file_extension, iteration
