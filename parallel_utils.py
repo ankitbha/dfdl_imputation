@@ -90,11 +90,12 @@ def process_iteration(iteration, target_file, regs_path, master_regs, load_dir, 
 
 def add_edge_method(regulators, targets, master_regs, n_genes):
     chosen_target = random.randint(0, n_genes - 1)
-    chosen_regulator = random.choice(list(regulators.keys()))
-    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target == chosen_regulator:
+    regs = list(regulators.keys())
+    chosen_regulator = random.choice(regs)
+    while chosen_target in [t[0] for t in regulators[chosen_regulator]] or chosen_target in master_regs or chosen_target in regs or chosen_target == chosen_regulator:
         chosen_target = random.randint(0, n_genes - 1)
     while chosen_regulator in [t[0] for t in targets[chosen_target]] or chosen_target == chosen_regulator:
-        chosen_regulator = random.choice(list(regulators.keys()))
+        chosen_regulator = random.choice(regs)
     return chosen_regulator, chosen_target
 
 def run_dfs(node, graph, visited, rec_stack):
@@ -128,6 +129,51 @@ def add_edge_and_check_cycle(chosen_regulator, chosen_target, graph):
             if run_dfs(node, graph, visited, rec_stack):
                 return True
     return False
+
+from SERGIO.SERGIO.sergio import sergio
+def modified_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300, file_extension = ''):
+    if ind == 1:
+        n_genes = 100
+    if ind == 2:
+        n_genes = 400
+    sim = sergio(
+        number_genes=n_genes, 
+        number_bins = n_bins, 
+        number_sc = n_sc,
+        # In paper
+        noise_params = 1,
+        # In paper
+        decays=0.8, 
+        sampling_state=15, 
+        noise_type='dpd')
+    
+    sim.build_graph(input_file_taregts=input_file, input_file_regs=reg_file, shared_coop_state=2)
+    sim.simulate()
+    
+    # Get Expression Data
+    expr = sim.getExpressions()
+    expr_clean = np.concatenate(expr, axis = 1)
+    ds_str = 'DS' + str(ind)
+    save_path = './imputations/' + ds_str
+    
+    # Save simulated data variants
+    np.save(save_path + '/DS6_clean' + file_extension, expr_clean )
+    np.save(save_path + '/DS6_expr' + file_extension, expr)
+    cmat_clean = sim.convert_to_UMIcounts(expr)
+    cmat_clean = np.concatenate(cmat_clean, axis = 1)
+    np.save(save_path + '/DS6_clean_counts' + file_extension, cmat_clean)
+
+    # Add Technical Noise - Steady State Simulations
+    expr_O = sim.outlier_effect(expr, outlier_prob = 0.01, mean = 5, scale = 1)
+    return expr_O, expr_clean
+
+    # To-implement
+    # libFactor, expr_O_L = sim.lib_size_effect(expr_O, mean = 4.5, scale = 0.7)
+    # binary_ind = sim.dropout_indicator(expr_O_L, shape = 8, percentile = 45)
+    # expr_O_L_D = np.multiply(binary_ind, expr_O_L)
+    # count_matrix = sim.convert_to_UMIcounts(expr_O_L_D)
+    # count_matrix = np.concatenate(count_matrix, axis = 1)
+    # np.save(save_path + '/DS6_noisy' + file_extension, count_matrix)
 
 def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension='', clean='clean'):
     regulators = {}
@@ -181,16 +227,17 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
         num_edges = [len(targs) for targs in regulators.values()]
         total_mods = int(sum(num_edges) * 0.3)
         for i in range(total_mods):
-            add = random.choice([True])
+            add = random.choice([True, False])
             if add:
-                has_cycle = True
-                cycle_iter = 50
-                while has_cycle:
-                    chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                    has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-                    cycle_iter -= 1
-                if cycle_iter == 0:
-                    continue
+                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                # has_cycle = True
+                # cycle_iter = 50
+                # while has_cycle:
+                #     chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+                #     has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+                #     cycle_iter -= 1
+                # if cycle_iter == 0:
+                #     continue
                 #target_sub_map[chosen_target] -= 1
             else:
                 chosen_target = random.choice(list(targets.keys()))
@@ -209,10 +256,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
     else:
         add = add_edge
         if add:
-            has_cycle = True
-            while has_cycle:
-                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            #has_cycle = True
+            #while has_cycle:
+            chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+            #has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
         else:
             chosen_target = random.choice(list(targets.keys()))
             while all([t[0] in master_regs for t in targets[chosen_target]]) or len(targets[chosen_target]) <= 1:
@@ -232,16 +279,17 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
         chosen_regulator = chosen_regulators[i]
         add = add_subtract[i]
         if add:
-            has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-            cycle_iter = 50
-            while has_cycle:
-                chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
-                has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
-                cycle_iter -= 1
-                if cycle_iter == 0:
-                    break
-            if cycle_iter == 0:
-                continue
+            # if multiple_edges:
+            # has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            # cycle_iter = 50
+            # while has_cycle:
+            #     chosen_regulator, chosen_target = add_edge_method(regulators, targets, master_regs, genes)
+            #     has_cycle = add_edge_and_check_cycle(chosen_regulator, chosen_target, regulator_adjacency_list)
+            #     cycle_iter -= 1
+            #     if cycle_iter == 0:
+            #         break
+            # if cycle_iter == 0:
+            #     continue
             min_hill = 1.0
             max_hill = 3.0
             if chosen_target in targets:
@@ -273,9 +321,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             ns = [str(x[2]) for x in target[1]]
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
-    run_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
-    sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
-    other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
+    expr_data, clean_data = modified_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
+    return expr_data, clean_data
+    #sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
+    #other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
     
     differences = other_df - sergio_df
     gaussian_params = differences.apply(fit_gaussian, axis=1)
@@ -285,9 +334,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
     for iter, target in enumerate(chosen_targets):
         chosen_reg = chosen_regulators[iter]
         add_sub = add_subtract[iter]
-        ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=(not add_sub))
-        rank = ranked_gaussian_params.index.get_loc(chosen_target)
+        ranked_gaussian_params = gaussian_params_with_index.sort_values(by='mean', ascending=False)#ascending=(not add_sub))
+        rank = ranked_gaussian_params.index.get_loc(target)
         rank += 1
-        final_ranks.append((chosen_reg, target, add_sub, rank))
+        value = ranked_gaussian_params.loc[ranked_gaussian_params['original_index'] == target]
+        final_ranks.append((chosen_reg, target, add_sub, rank, value))
 
     return ranked_gaussian_params, final_ranks, temp_target, file_extension, iteration
