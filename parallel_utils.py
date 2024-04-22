@@ -130,6 +130,51 @@ def add_edge_and_check_cycle(chosen_regulator, chosen_target, graph):
                 return True
     return False
 
+from SERGIO.SERGIO.sergio import sergio
+def modified_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300, file_extension = ''):
+    if ind == 1:
+        n_genes = 100
+    if ind == 2:
+        n_genes = 400
+    sim = sergio(
+        number_genes=n_genes, 
+        number_bins = n_bins, 
+        number_sc = n_sc,
+        # In paper
+        noise_params = 1,
+        # In paper
+        decays=0.8, 
+        sampling_state=15, 
+        noise_type='dpd')
+    
+    sim.build_graph(input_file_taregts=input_file, input_file_regs=reg_file, shared_coop_state=2)
+    sim.simulate()
+    
+    # Get Expression Data
+    expr = sim.getExpressions()
+    expr_clean = np.concatenate(expr, axis = 1)
+    ds_str = 'DS' + str(ind)
+    save_path = './imputations/' + ds_str
+    
+    # Save simulated data variants
+    np.save(save_path + '/DS6_clean' + file_extension, expr_clean )
+    np.save(save_path + '/DS6_expr' + file_extension, expr)
+    cmat_clean = sim.convert_to_UMIcounts(expr)
+    cmat_clean = np.concatenate(cmat_clean, axis = 1)
+    np.save(save_path + '/DS6_clean_counts' + file_extension, cmat_clean)
+
+    # Add Technical Noise - Steady State Simulations
+    expr_O = sim.outlier_effect(expr, outlier_prob = 0.01, mean = 5, scale = 1)
+    return expr_O, expr_clean
+
+    # To-implement
+    # libFactor, expr_O_L = sim.lib_size_effect(expr_O, mean = 4.5, scale = 0.7)
+    # binary_ind = sim.dropout_indicator(expr_O_L, shape = 8, percentile = 45)
+    # expr_O_L_D = np.multiply(binary_ind, expr_O_L)
+    # count_matrix = sim.convert_to_UMIcounts(expr_O_L_D)
+    # count_matrix = np.concatenate(count_matrix, axis = 1)
+    # np.save(save_path + '/DS6_noisy' + file_extension, count_matrix)
+
 def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension='', clean='clean'):
     regulators = {}
     targets = {}
@@ -276,9 +321,10 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             ns = [str(x[2]) for x in target[1]]
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
-    run_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
-    sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
-    other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
+    expr_data, clean_data = modified_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
+    return expr_data, clean_data
+    #sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
+    #other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
     
     differences = other_df - sergio_df
     gaussian_params = differences.apply(fit_gaussian, axis=1)
