@@ -24,6 +24,7 @@ wheels/
 .installed.cfg
 *.egg
 *.DS_Store
+*/.DS_Store
 MANIFEST
 
 # PyInstaller

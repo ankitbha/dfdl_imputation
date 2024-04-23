@@ -165,7 +165,7 @@ def modified_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300,
 
     # Add Technical Noise - Steady State Simulations
     expr_O = sim.outlier_effect(expr, outlier_prob = 0.01, mean = 5, scale = 1)
-    return expr_O, expr_clean
+    return expr, expr_clean
 
     # To-implement
     # libFactor, expr_O_L = sim.lib_size_effect(expr_O, mean = 4.5, scale = 0.7)
@@ -322,7 +322,7 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
     expr_data, clean_data = modified_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
-    return expr_data, clean_data
+    return expr_data, clean_data, chosen_tuples
     #sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
     #other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
     
