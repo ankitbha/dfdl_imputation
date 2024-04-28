@@ -890,7 +890,7 @@ class sergio (object):
         mean: mean for log-normal distribution
 
         var: var for log-normal distribution
-
+ 
         returns libFactors ( np.array(nBin, nCell) )
         returns modified single cell data ( np.array(nBin, nGene, nCell) )
         """

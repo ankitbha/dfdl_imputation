@@ -175,7 +175,7 @@ def modified_sergio(input_file, reg_file, ind, n_genes=1200, n_bins=9, n_sc=300,
     # count_matrix = np.concatenate(count_matrix, axis = 1)
     # np.save(save_path + '/DS6_noisy' + file_extension, count_matrix)
 
-def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension='', clean='clean'):
+def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, load_dir, add_edge, multiple_edges, imp_dir, dataset_id, file_extension='', clean='clean', normalize=False):
     regulators = {}
     targets = {}
     chosen_pair = None
@@ -321,10 +321,16 @@ def new_mean_process_iteration(iteration, target_file, regs_path, master_regs, l
             ns = [str(x[2]) for x in target[1]]
             file_copy.write(f'{t},{len_regs},{",".join(regs)},{",".join(hill_values)},{",".join(ns)}\n')
 
-    expr_data, clean_data = modified_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
-    return expr_data, clean_data, chosen_tuples
-    #sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
-    #other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
+    #expr_data, clean_data = modified_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
+    #return expr_data, clean_data, chosen_tuples
+    run_sergio(temp_target, regs_path, dataset_id, file_extension=file_extension)
+    sergio_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}.npy")))
+    if normalize:
+        other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
+        total_counts = other_df.sum(axis=0)
+        normalized_df = other_df.divide(total_counts, axis='columns') #* 1e6 # counts per million?
+        np.save(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy"), normalized_df.to_numpy())
+    other_df = pd.DataFrame(np.load(os.path.join(load_dir, f"DS6_{clean}{file_extension}.npy")))
     
     differences = other_df - sergio_df
     gaussian_params = differences.apply(fit_gaussian, axis=1)
