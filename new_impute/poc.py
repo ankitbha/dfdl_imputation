@@ -145,7 +145,7 @@ def process_dataset(dataset_info, clean_path):
             log_file.write(f"ROC AUC Score: {roc_auc}\n")
             log_file.write(f"Elapsed time: {elapsed_time:.2f} seconds\n\n")
 
-    get_distribution_range(ds_clean, dataset_id)
+    get_distribution_range(ds_clean.astype(float32), dataset_id)
 
 ensure_dir('./results/poc')
 
@@ -155,8 +155,14 @@ cleans = {
     3: '../SERGIO/imputation_data_2/DS3/DS6_clean.npy'
 }
 
-datasets = get_datasets()
+noisy = {
+    1: '../SERGIO/imputation_data_2/DS1/DS6_45_iter_0.npy',
+    2: '../SERGIO/imputation_data_2/DS2/DS6_45_iter_0.npy',
+    3: '../SERGIO/imputation_data_2/DS3/DS6_45_iter_0.npy'
+}
+
+datasets = [get_datasets()[1]]
 for dataset_info in tqdm(datasets):
-    process_dataset(dataset_info, cleans[dataset_info['dataset_id']])
+    process_dataset(dataset_info, noisy[dataset_info['dataset_id']])
 
 print("Analysis complete. Results saved in ./results/poc/")

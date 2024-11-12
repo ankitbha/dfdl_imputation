@@ -44,6 +44,8 @@ from baselines.MAGIC.magic import magic
 # For scScope
 import baselines.scScope.scscope.scscope as scScope
 
+nthreads = 12
+
 # Ensure that the necessary paths are in sys.path
 sys.path.append('./baselines')
 sys.path.append('../SERGIO')
@@ -133,16 +135,16 @@ def build_adjacency_matrix(num_genes, interactions_file):
                 adjacency_matrix[gene, target] = 1
     return adjacency_matrix
 
-def knn_imputation(ds1, n_neighbors=5, cells_per_type=300):
+def knn_imputation(ds, n_neighbors=5, cells_per_type=300):
     # Replace zeros with NaN to mark missing values
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
     
     # Initialize the imputed dataset
-    ds1_imputed = np.copy(ds1)
+    ds_imputed = np.copy(ds)
     
     # Number of genes and cells
-    num_genes, num_cells = ds1.shape
+    num_genes, num_cells = ds.shape
     
     # Number of cell types
     num_cell_types = num_cells // cells_per_type
@@ -151,63 +153,63 @@ def knn_imputation(ds1, n_neighbors=5, cells_per_type=300):
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
+        ds_cell_type = ds[:, start_idx:end_idx]
         
         # Transpose the data to shape (cells, genes) for KNNImputer
-        ds1_cell_type_T = ds1_cell_type.T
+        ds_cell_type_T = ds_cell_type.T
         
         # Initialize KNNImputer
         imputer = KNNImputer(n_neighbors=n_neighbors, weights='distance')
         
         # Perform imputation
-        ds1_cell_type_imputed_T = imputer.fit_transform(ds1_cell_type_T)
+        ds_cell_type_imputed_T = imputer.fit_transform(ds_cell_type_T)
         
         # Transpose back to original shape
-        ds1_cell_type_imputed = ds1_cell_type_imputed_T.T
+        ds_cell_type_imputed = ds_cell_type_imputed_T.T
         
         # Update the imputed dataset
-        ds1_imputed[:, start_idx:end_idx] = ds1_cell_type_imputed
+        ds_imputed[:, start_idx:end_idx] = ds_cell_type_imputed
     
     # Replace any remaining NaN values with zero
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    ds1_imputed[ds1_imputed < 0] = 0.0
+    ds_imputed = np.nan_to_num(ds_imputed)
+    ds_imputed[ds_imputed < 0] = 0.0
     
-    return ds1_imputed
+    return ds_imputed
 
-def iterative_imputation(ds1, cells_per_type=300):
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
-    ds1_imputed = np.copy(ds1)
-    num_genes, num_cells = ds1.shape
+def iterative_imputation(ds, cells_per_type=300):
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
+    ds_imputed = np.copy(ds)
+    num_genes, num_cells = ds.shape
     num_cell_types = num_cells // cells_per_type
 
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
-        ds1_cell_type_T = ds1_cell_type.T
+        ds_cell_type = ds[:, start_idx:end_idx]
+        ds_cell_type_T = ds_cell_type.T
         imputer = IterativeImputer(max_iter=10, random_state=0)
-        ds1_cell_type_imputed_T = imputer.fit_transform(ds1_cell_type_T)
-        ds1_cell_type_imputed = ds1_cell_type_imputed_T.T
-        ds1_imputed[:, start_idx:end_idx] = ds1_cell_type_imputed
+        ds_cell_type_imputed_T = imputer.fit_transform(ds_cell_type_T)
+        ds_cell_type_imputed = ds_cell_type_imputed_T.T
+        ds_imputed[:, start_idx:end_idx] = ds_cell_type_imputed
 
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    return ds1_imputed
+    ds_imputed = np.nan_to_num(ds_imputed)
+    ds_imputed[ds_imputed < 0] = 0.0
+    return ds_imputed
 
-def deep_learning_imputation(ds1, cells_per_type=300):
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
-    num_genes, num_cells = ds1.shape
-    ds1_imputed = np.copy(ds1)
+def deep_learning_imputation(ds, cells_per_type=300):
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
+    num_genes, num_cells = ds.shape
+    ds_imputed = np.copy(ds)
     num_cell_types = num_cells // cells_per_type
 
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
-        ds1_cell_type_T = ds1_cell_type.T
-        df = pd.DataFrame(ds1_cell_type_T)
+        ds_cell_type = ds[:, start_idx:end_idx]
+        ds_cell_type_T = ds_cell_type.T
+        df = pd.DataFrame(ds_cell_type_T)
         
         # Replace NaNs with zeros for DeepImpute
         df = df.fillna(0)
@@ -215,26 +217,26 @@ def deep_learning_imputation(ds1, cells_per_type=300):
         model = MultiNet()
         model.fit(df)
         imputed_data = model.predict(df)
-        ds1_cell_type_imputed = imputed_data.to_numpy().T
-        ds1_imputed[:, start_idx:end_idx] = ds1_cell_type_imputed
+        ds_cell_type_imputed = imputed_data.to_numpy().T
+        ds_imputed[:, start_idx:end_idx] = ds_cell_type_imputed
 
     # Replace any NaNs or infs with zeros
-    ds1_imputed = np.nan_to_num(ds1_imputed, nan=0.0, posinf=0.0, neginf=0.0)
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    return ds1_imputed
+    ds_imputed = np.nan_to_num(ds_imputed, nan=0.0, posinf=0.0, neginf=0.0)
+    ds_imputed[ds_imputed < 0] = 0.0
+    return ds_imputed
 
-def graph_convolutional_imputation(ds1, adjacency_matrix, num_epochs=100, learning_rate=0.01):
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
-    num_genes, num_cells = ds1.shape
-    ds1_imputed = np.copy(ds1)
+def graph_convolutional_imputation(ds, adjacency_matrix, num_epochs=100, learning_rate=0.01):
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
+    num_genes, num_cells = ds.shape
+    ds_imputed = np.copy(ds)
     
     # Convert adjacency matrix to edge index
     edge_index = np.array(adjacency_matrix.nonzero())
     edge_index = torch.tensor(edge_index, dtype=torch.long)
     
     # Convert data to PyTorch tensors
-    x = torch.tensor(ds1_imputed, dtype=torch.float)  # Shape: (num_genes, num_cells)
+    x = torch.tensor(ds_imputed, dtype=torch.float)  # Shape: (num_genes, num_cells)
     
     class GCN(torch.nn.Module):
         def __init__(self, num_features, hidden_channels):
@@ -272,15 +274,15 @@ def graph_convolutional_imputation(ds1, adjacency_matrix, num_epochs=100, learni
     with torch.no_grad():
         imputed = model(x, edge_index)
         x[mask] = imputed[mask]
-    ds1_imputed = x.numpy()
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    return ds1_imputed
+    ds_imputed = x.numpy()
+    ds_imputed[ds_imputed < 0] = 0.0
+    return ds_imputed
 
-def graph_diffusion_imputation(ds1, adjacency_matrix, alpha=0.5, max_iter=100):
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
-    ds1_imputed = np.copy(ds1)
-    num_genes, num_cells = ds1.shape
+def graph_diffusion_imputation(ds, adjacency_matrix, alpha=0.5, max_iter=100):
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
+    ds_imputed = np.copy(ds)
+    num_genes, num_cells = ds.shape
 
     degrees = np.sum(adjacency_matrix, axis=1)
     with np.errstate(divide='ignore'):
@@ -294,7 +296,7 @@ def graph_diffusion_imputation(ds1, adjacency_matrix, alpha=0.5, max_iter=100):
     A = I - alpha * P + epsilon * np.eye(num_genes)
 
     for cell_idx in range(num_cells):
-        y = ds1_imputed[:, cell_idx]
+        y = ds_imputed[:, cell_idx]
         missing_indices = np.isnan(y)
         if np.any(missing_indices):
             x0 = np.zeros(num_genes)
@@ -303,83 +305,83 @@ def graph_diffusion_imputation(ds1, adjacency_matrix, alpha=0.5, max_iter=100):
             if info != 0:
                 print(f"Warning: BiCGSTAB did not converge for cell {cell_idx}, info: {info}")
             y[missing_indices] = x[missing_indices]
-            ds1_imputed[:, cell_idx] = y
+            ds_imputed[:, cell_idx] = y
 
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    return ds1_imputed
+    ds_imputed = np.nan_to_num(ds_imputed)
+    ds_imputed[ds_imputed < 0] = 0.0
+    return ds_imputed
 
-def saucie_imputation(ds1, cells_per_type=300):
-    ds1 = ds1.copy()
-    num_genes, num_cells = ds1.shape
-    ds1_imputed = np.copy(ds1)
+def saucie_imputation(ds, cells_per_type=300):
+    ds = ds.copy()
+    num_genes, num_cells = ds.shape
+    ds_imputed = np.copy(ds)
     
     num_cell_types = num_cells // cells_per_type
 
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
-        ds1_cell_type_T = ds1_cell_type.T
+        ds_cell_type = ds[:, start_idx:end_idx]
+        ds_cell_type_T = ds_cell_type.T
 
         tf.reset_default_graph()
-        saucie = SAUCIE(ds1_cell_type_T.shape[1])
-        loadtrain = Loader(ds1_cell_type_T, shuffle=True)
+        saucie = SAUCIE(ds_cell_type_T.shape[1])
+        loadtrain = Loader(ds_cell_type_T, shuffle=True)
         saucie.train(loadtrain, steps=1000)
-        loadeval = Loader(ds1_cell_type_T, shuffle=False)
-        rec_ds1_T = saucie.get_reconstruction(loadeval)
-        rec_ds1 = rec_ds1_T.T
-        ds1_imputed[:, start_idx:end_idx] = rec_ds1
+        loadeval = Loader(ds_cell_type_T, shuffle=False)
+        rec_ds_T = saucie.get_reconstruction(loadeval)
+        rec_ds = rec_ds_T.T
+        ds_imputed[:, start_idx:end_idx] = rec_ds
 
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    return ds1_imputed
+    ds_imputed[ds_imputed < 0] = 0.0
+    ds_imputed = np.nan_to_num(ds_imputed)
+    return ds_imputed
 
-def magic_imputation(ds1, cells_per_type=300):
-    ds1 = ds1.copy()
-    num_genes, num_cells = ds1.shape
-    ds1_imputed = np.copy(ds1)
+def magic_imputation(ds, cells_per_type=300):
+    ds = ds.copy()
+    num_genes, num_cells = ds.shape
+    ds_imputed = np.copy(ds)
     
     num_cell_types = num_cells // cells_per_type
 
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
-        ds1_cell_type_T = ds1_cell_type.T
+        ds_cell_type = ds[:, start_idx:end_idx]
+        ds_cell_type_T = ds_cell_type.T
 
-        ds1_filtered_T = scprep.filter.filter_rare_genes(ds1_cell_type_T, min_cells=5)
-        ds1_normalized_T = scprep.normalize.library_size_normalize(ds1_filtered_T)
-        ds1_sqrt_T = scprep.transform.sqrt(ds1_normalized_T)
+        ds_filtered_T = scprep.filter.filter_rare_genes(ds_cell_type_T, min_cells=5)
+        ds_normalized_T = scprep.normalize.library_size_normalize(ds_filtered_T)
+        ds_sqrt_T = scprep.transform.sqrt(ds_normalized_T)
         magic_operator = magic.MAGIC(
             t='auto',
             n_pca=20,
             n_jobs=-1,
         )
-        ds1_imputed_T = magic_operator.fit_transform(ds1_sqrt_T)
-        ds1_imputed_cell_type = ds1_imputed_T.T
+        ds_imputed_T = magic_operator.fit_transform(ds_sqrt_T)
+        ds_imputed_cell_type = ds_imputed_T.T
 
-        ds1_imputed[:, start_idx:end_idx] = ds1_imputed_cell_type
+        ds_imputed[:, start_idx:end_idx] = ds_imputed_cell_type
 
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    return ds1_imputed
+    ds_imputed[ds_imputed < 0] = 0.0
+    ds_imputed = np.nan_to_num(ds_imputed)
+    return ds_imputed
 
-def scscope_imputation(ds1, cells_per_type=300):
-    ds1 = ds1.copy()
-    ds1[ds1 == 0] = np.nan
-    num_genes, num_cells = ds1.shape
-    ds1_imputed = np.copy(ds1)
+def scscope_imputation(ds, cells_per_type=300):
+    ds = ds.copy()
+    ds[ds == 0] = np.nan
+    num_genes, num_cells = ds.shape
+    ds_imputed = np.copy(ds)
     
     num_cell_types = num_cells // cells_per_type
 
     for i in range(num_cell_types):
         start_idx = i * cells_per_type
         end_idx = start_idx + cells_per_type
-        ds1_cell_type = ds1[:, start_idx:end_idx]
-        ds1_cell_type_T = ds1_cell_type.T
+        ds_cell_type = ds[:, start_idx:end_idx]
+        ds_cell_type_T = ds_cell_type.T
         DI_model = scScope.train(
-            ds1_cell_type_T,
+            ds_cell_type_T,
             15,
             use_mask=True,
             batch_size=64,
@@ -392,29 +394,29 @@ def scscope_imputation(ds1, cells_per_type=300):
             learning_rate=0.0001,
             beta1=0.05,
             num_gpus=1)
-        _, rec_ds1_cell_type_T, _ = scScope.predict(ds1_cell_type_T, DI_model)
-        rec_ds1_cell_type = rec_ds1_cell_type_T.T
-        ds1_imputed[:, start_idx:end_idx] = rec_ds1_cell_type
+        _, rec_ds_cell_type_T, _ = scScope.predict(ds_cell_type_T, DI_model)
+        rec_ds_cell_type = rec_ds_cell_type_T.T
+        ds_imputed[:, start_idx:end_idx] = rec_ds_cell_type
 
-    ds1_imputed[ds1_imputed < 0] = 0.0
-    ds1_imputed = np.nan_to_num(ds1_imputed)
-    return ds1_imputed
+    ds_imputed[ds_imputed < 0] = 0.0
+    ds_imputed = np.nan_to_num(ds_imputed)
+    return ds_imputed
 
-def run_pipeline(imputation_method, method_name, ds1_noisy, ds1_clean, gt, adjacency_matrix=None, cells_per_type=300):
+def run_pipeline(imputation_method, method_name, ds_noisy, ds_clean, gt, adjacency_matrix=None, cells_per_type=300):
     print(f"Running {method_name}...")
     if 'Graph' in method_name:
-        ds1_imputed = imputation_method(ds1_noisy, adjacency_matrix)
+        ds_imputed = imputation_method(ds_noisy, adjacency_matrix)
     else:
-        ds1_imputed = imputation_method(ds1_noisy, cells_per_type=cells_per_type)
+        ds_imputed = imputation_method(ds_noisy, cells_per_type=cells_per_type)
 
     # Evaluate imputation quality
-    mse = mean_squared_error(ds1_clean.flatten(), ds1_imputed.flatten())
+    mse = mean_squared_error(ds_clean.flatten(), ds_imputed.flatten())
     print(f"MSE after {method_name}: {mse:.4f}")
 
     # Proceed with GENIE3 and ROC AUC evaluation
-    ds1_imputed_T = ds1_imputed.T
-    VIM_imputed = GENIE3(ds1_imputed_T, nthreads=80, ntrees=100, regulators='all',
-                         gene_names=[str(s) for s in range(ds1_imputed_T.shape[1])])
+    ds_imputed_T = ds_imputed.T
+    VIM_imputed = GENIE3(ds_imputed_T, nthreads=nthreads, ntrees=100, regulators='all',
+                         gene_names=[str(s) for s in range(ds_imputed_T.shape[1])])
     roc_auc = roc_auc_score(gt.flatten(), VIM_imputed.flatten())
     print(f"ROC AUC Score after {method_name}: {roc_auc:.4f}\n")
     return roc_auc, mse
@@ -439,13 +441,13 @@ methods = {
 for dataset_info in datasets:
     dataset_id = dataset_info['dataset_id']
     print(f"\nProcessing Dataset {dataset_id}...")
-    ds1_clean, ds1_noisy = load_data(dataset_info)
-    if ds1_clean is None or ds1_noisy is None:
+    ds_clean, ds_noisy = load_data(dataset_info)
+    if ds_clean is None or ds_noisy is None:
         continue
 
-    num_genes = ds1_noisy.shape[0]
+    num_genes = ds_noisy.shape[0]
     cells_per_type = dataset_info['cells_per_type']
-    num_cells = ds1_noisy.shape[1]
+    num_cells = ds_noisy.shape[1]
 
     target_file = f'../SERGIO/data_sets/{dataset_info["folder_name"]}/Interaction_cID_{dataset_info["dynamics"]}.txt'
     gt = load_ground_truth(target_file, num_genes)
@@ -458,24 +460,24 @@ for dataset_info in datasets:
     with open(log_file_path, 'w') as log_file:
         # Evaluate clean data
         print("Evaluating Clean Data...")
-        ds1_clean_T = ds1_clean.T
-        VIM_clean = GENIE3(ds1_clean_T, nthreads=80, ntrees=100, regulators='all',
-                            gene_names=[str(s) for s in range(ds1_clean_T.shape[1])])
+        ds_clean_T = ds_clean.T
+        VIM_clean = GENIE3(ds_clean_T, nthreads=nthreads, ntrees=100, regulators='all',
+                            gene_names=[str(s) for s in range(ds_clean_T.shape[1])])
         roc_auc_clean = roc_auc_score(gt.flatten(), VIM_clean.flatten())
         print(f"ROC AUC Score for Clean Data: {roc_auc_clean:.4f}\n")
         log_file.write(f"ROC AUC Score for Clean Data: {roc_auc_clean:.4f}\n")
 
         # Evaluate noisy data
         print("Evaluating Noisy Data...")
-        ds1_noisy_T = ds1_noisy.T
-        VIM_noisy = GENIE3(ds1_noisy_T, nthreads=80, ntrees=100, regulators='all',
-                            gene_names=[str(s) for s in range(ds1_noisy_T.shape[1])])
+        ds_noisy_T = ds_noisy.T
+        VIM_noisy = GENIE3(ds_noisy_T, nthreads=nthreads, ntrees=100, regulators='all',
+                            gene_names=[str(s) for s in range(ds_noisy_T.shape[1])])
         roc_auc_noisy = roc_auc_score(gt.flatten(), VIM_noisy.flatten())
         print(f"ROC AUC Score for Noisy Data: {roc_auc_noisy:.4f}\n")
         log_file.write(f"ROC AUC Score for Noisy Data: {roc_auc_noisy:.4f}\n")
 
         # Compute MSE between noisy data and clean data
-        mse_noisy = mean_squared_error(ds1_clean.flatten(), ds1_noisy.flatten())
+        mse_noisy = mean_squared_error(ds_clean.flatten(), ds_noisy.flatten())
         print(f"MSE between Noisy Data and Clean Data: {mse_noisy:.4f}\n")
         log_file.write(f"MSE between Noisy Data and Clean Data: {mse_noisy:.4f}\n")
 
@@ -485,9 +487,9 @@ for dataset_info in datasets:
         for method_name, method_func in methods.items():
             try:
                 if 'Graph' in method_name:
-                    roc_auc, mse = run_pipeline(method_func, method_name, ds1_noisy, ds1_clean, gt, adjacency_matrix, cells_per_type)
+                    roc_auc, mse = run_pipeline(method_func, method_name, ds_noisy, ds_clean, gt, adjacency_matrix, cells_per_type)
                 else:
-                    roc_auc, mse = run_pipeline(method_func, method_name, ds1_noisy, ds1_clean, gt, cells_per_type=cells_per_type)
+                    roc_auc, mse = run_pipeline(method_func, method_name, ds_noisy, ds_clean, gt, cells_per_type=cells_per_type)
                 results[method_name] = roc_auc
                 mse_results[method_name] = mse
                 log_file.write(f"{method_name} ROC AUC: {roc_auc:.4f}, MSE: {mse:.4f}\n")

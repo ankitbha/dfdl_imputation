@@ -8,5 +8,53 @@ Elapsed time: 16.43 seconds
 
 Dataset: DS1, Method: novar_substitute
 ROC AUC Score: 0.6057556269584743
-Elapsed time: 21.18 seconßds
+Elapsed time: 21.18 seconds
+
+Dataset: DS1, Method: substitute
+ROC AUC Score: 0.5768450042093771
+Elapsed time: 24.08 seconds
+
+Dataset: DS1, Method: normalized_substitute
+ROC AUC Score: 0.5588178891366241
+Elapsed time: 16.66 seconds
+
+Dataset: DS1, Method: novar_substitute
+ROC AUC Score: 0.4996733555181035
+Elapsed time: 21.95 seconds
+
+Dataset: DS1, Method: substitute
+ROC AUC Score: 0.5690254297304567
+Elapsed time: 25.09 seconds
+
+Dataset: DS1, Method: normalized_substitute
+ROC AUC Score: 0.5168900262429599
+Elapsed time: 16.58 seconds
+
+Dataset: DS1, Method: novar_substitute
+ROC AUC Score: 0.5081903816130589
+Elapsed time: 22.35 seconds
+
+Dataset: DS1, Method: substitute
+ROC AUC Score: 0.5864951405168064
+Elapsed time: 24.10 seconds
+
+Dataset: DS1, Method: normalized_substitute
+ROC AUC Score: 0.5206549918120056
+Elapsed time: 16.54 seconds
+
+Dataset: DS1, Method: novar_substitute
+ROC AUC Score: 0.46001608952843837
+Elapsed time: 22.01 seconds
+
+Dataset: DS1, Method: substitute
+ROC AUC Score: 0.5767829377791995
+Elapsed time: 24.04 seconds
+
+Dataset: DS1, Method: normalized_substitute
+ROC AUC Score: 0.5486541133333016
+Elapsed time: 16.62 seconds
+
+Dataset: DS1, Method: novar_substitute
+ROC AUC Score: 0.5061421894171962
+Elapsed time: 21.99 seconds
 

@@ -1,0 +1,28 @@
+model_params:
+  name: 'BetaVAE'
+  latent_dim: 64
+  loss_type: 'H'
+  gamma: 1
+  max_capacity: 25
+  Capacity_max_iter: 15000
+
+data_params:
+  train_val_test_split: [0.8, 0.1, 0.1]
+  train_batch_size: 100
+  val_batch_size:  100
+  test_batch_size: 100
+  num_workers: 4
+  
+exp_params:
+  LR: 0.0001
+  weight_decay: 0.0
+  scheduler_gamma: 0.95
+  kld_weight: 4
+  manual_seed: 42
+
+trainer_params:
+  gpus: [0]
+  max_epochs: 500
+
+logging_params:
+  save_dir: "logs/"

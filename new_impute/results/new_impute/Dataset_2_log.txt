@@ -1,20 +1,20 @@
-ROC AUC Score for Clean Data: 0.7995
-ROC AUC Score for Noisy Data: 0.4462
+ROC AUC Score for Clean Data: 0.8030
+ROC AUC Score for Noisy Data: 0.4414
 MSE between Noisy Data and Clean Data: 73.9662
 An error occurred with KNN Imputation: could not broadcast input array from shape (388,300) into shape (400,300)
 An error occurred with Iterative Imputation: could not broadcast input array from shape (388,300) into shape (400,300)
-DeepImpute ROC AUC: 0.5725, MSE: 64.9663
+DeepImpute ROC AUC: 0.5709, MSE: 64.9663
 An error occurred with Graph Convolutional Network Imputation: Input contains NaN.
-Graph Diffusion Imputation ROC AUC: 0.4943, MSE: 73.2123
+Graph Diffusion Imputation ROC AUC: 0.4880, MSE: 73.2123
 An error occurred with SAUCIE: name 'SAUCIE' is not defined
 An error occurred with MAGIC: could not broadcast input array from shape (297,300) into shape (400,300)
 An error occurred with scScope: Input y contains NaN.
 
 Summary of ROC AUC Scores:
-Clean Data: 0.7995
-Noisy Data: 0.4462
-DeepImpute: 0.5725
-Graph Diffusion Imputation: 0.4943
+Clean Data: 0.8030
+Noisy Data: 0.4414
+DeepImpute: 0.5709
+Graph Diffusion Imputation: 0.4880
 
 Summary of MSE Values:
 Noisy Data: 73.9662

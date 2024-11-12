@@ -1,0 +1,8 @@
+{
+    "train_ratio": 0.8,
+    "valid_ratio": 0.09999999999999998,
+    "test_ratio": 0.09999999999999998,
+    "num_genes": 692,
+    "num_cells": 847,
+    "timestamp": "20241024_162115"
+}

@@ -119,3 +119,7 @@ imputations/*
 SERGIO/data_sets
 SERGIO/imputation_data_temp
 SERGIO/run.sbatch
+contrastive_learning/results
+contrastive_learning/logs
+contrastive_learning/models
+contrastive_learning/emb_models

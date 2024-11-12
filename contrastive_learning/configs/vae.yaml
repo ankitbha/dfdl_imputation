@@ -1,0 +1,24 @@
+model_params:
+  name: 'VanillaVAE'
+  latent_dim: 64
+
+data_params:
+  train_val_test_split: [0.8, 0.1, 0.1]
+  train_batch_size: 16
+  val_batch_size:  16
+  test_batch_size: 16
+  num_workers: 4
+
+exp_params:
+  LR: 0.0001
+  weight_decay: 0.0
+  scheduler_gamma: 0.95
+  kld_weight: 0.1
+  manual_seed: 42
+
+trainer_params:
+  gpus: [0]
+  max_epochs: 100
+
+logging_params:
+  save_dir: "logs/"
